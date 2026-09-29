@@ -38,6 +38,7 @@ export default function ProductGallery({ product }: { product: Product }) {
             src={active}
             alt={product.name}
             fill
+            quality={90}
             sizes="(min-width: 768px) 50vw, 100vw"
             className="object-cover transition-transform duration-300 ease-out"
             style={{
@@ -63,7 +64,7 @@ export default function ProductGallery({ product }: { product: Product }) {
               }`}
               aria-label={`Görsel ${index + 1}`}
             >
-              <Image src={image} alt="" fill sizes="64px" className="object-cover" />
+              <Image src={image} alt="" fill quality={90} sizes="64px" className="object-cover" />
             </button>
           ))}
         </div>

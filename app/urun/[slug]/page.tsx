@@ -3,8 +3,10 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProductGallery from "@/components/product/ProductGallery";
 import AddToCartButton from "@/components/product/AddToCartButton";
+import StockNotifyForm from "@/components/product/StockNotifyForm";
 import { categoryLabels } from "@/components/ui/CategoryIcon";
 import { getProductBySlug } from "@/lib/data/products";
+import { getCurrentProfile } from "@/lib/data/profile";
 
 interface UrunPageProps {
   params: Promise<{ slug: string }>;
@@ -12,11 +14,16 @@ interface UrunPageProps {
 
 export default async function UrunPage({ params }: UrunPageProps) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const [product, profile] = await Promise.all([
+    getProductBySlug(slug),
+    getCurrentProfile(),
+  ]);
 
   if (!product) {
     notFound();
   }
+
+  const inStock = (product.stock ?? 0) > 0;
 
   return (
     <>
@@ -46,11 +53,21 @@ export default async function UrunPage({ params }: UrunPageProps) {
               </p>
             )}
 
-            <div className="mt-4 text-xs tracking-wide text-ink-soft">
-              {product.stock && product.stock > 0
-                ? `Stokta ${product.stock} adet`
-                : "Stokta yok"}
-            </div>
+            {inStock ? (
+              <div className="mt-4 text-xs tracking-wide text-ink-soft">
+                Stokta {product.stock} adet
+              </div>
+            ) : (
+              <div className="mt-4">
+                <div className="text-xs tracking-wide text-status-red-fg">Stokta yok</div>
+                <StockNotifyForm
+                  productId={product.id}
+                  productName={product.name}
+                  productSlug={product.slug}
+                  userEmail={profile?.email}
+                />
+              </div>
+            )}
 
             <div className="mt-8">
               <AddToCartButton product={product} />

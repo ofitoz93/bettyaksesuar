@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
+import { notifyBackInStockCustomers } from "@/lib/data/stockNotifications";
 import type { ProductCategory } from "@/lib/types";
 
 export interface ActionState {
@@ -179,6 +180,14 @@ export async function updateProduct(
   }
 
   const supabase = await createClient();
+
+  const { data: existingProduct } = await supabase
+    .from("products")
+    .select("stock")
+    .eq("id", id)
+    .maybeSingle();
+  const wasOutOfStock = !existingProduct || (existingProduct.stock ?? 0) <= 0;
+
   const { error } = await supabase
     .from("products")
     .update({
@@ -197,6 +206,14 @@ export async function updateProduct(
 
   if (error) {
     return { error: `Ürün güncellenemedi: ${error.message}` };
+  }
+
+  if (wasOutOfStock && fields.stock > 0) {
+    try {
+      await notifyBackInStockCustomers(id, fields.name, fields.slug);
+    } catch (err) {
+      console.error("notifyBackInStockCustomers error:", err);
+    }
   }
 
   const deleteIds = formData.getAll("deleteImageIds").map(String).filter(Boolean);

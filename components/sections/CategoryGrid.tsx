@@ -33,6 +33,7 @@ export default async function CategoryGrid() {
                       alt={categoryLabels[category]}
                       width={140}
                       height={140}
+                      quality={90}
                       className="h-full w-full object-cover"
                     />
                   ) : (

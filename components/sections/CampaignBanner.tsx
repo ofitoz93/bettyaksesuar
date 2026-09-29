@@ -15,6 +15,7 @@ export default async function CampaignBanner() {
               src={settings.campaignImageUrl}
               alt=""
               fill
+              quality={90}
               sizes="(min-width: 1200px) 1152px, 100vw"
               className="object-cover"
             />

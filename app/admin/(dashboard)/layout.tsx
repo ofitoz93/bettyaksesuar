@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { logout } from "@/app/admin/actions";
+import { getPendingStockNotificationCount } from "@/lib/data/stockNotifications";
 
-export default function AdminDashboardLayout({
+export default async function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pendingStockRequests = await getPendingStockNotificationCount();
+
   return (
     <div className="min-h-screen bg-ivory-deep">
       <header className="border-b border-line bg-white px-8 py-4">
@@ -25,6 +28,17 @@ export default function AdminDashboardLayout({
               className="text-xs tracking-wide text-ink-soft hover:text-ink"
             >
               İadeler
+            </Link>
+            <Link
+              href="/admin/stok-talepleri"
+              className="flex items-center gap-1.5 text-xs tracking-wide text-ink-soft hover:text-ink"
+            >
+              Stok Talepleri
+              {pendingStockRequests > 0 && (
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-gold-deep px-1 text-[10px] font-medium text-white">
+                  {pendingStockRequests}
+                </span>
+              )}
             </Link>
             <Link
               href="/admin/yorumlar"

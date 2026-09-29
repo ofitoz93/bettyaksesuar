@@ -55,58 +55,51 @@ export default function PromoPopup({
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4 py-8 overflow-y-auto">
-      <div className="relative w-full max-w-3xl overflow-hidden bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-4 py-6 overflow-y-auto">
+      <div className="relative w-full max-w-[340px] overflow-hidden rounded-lg bg-white shadow-xl">
         <button
           type="button"
           onClick={close}
           aria-label="Kapat"
-          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-ink hover:bg-white"
+          className="absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-ink hover:bg-white"
         >
           ✕
         </button>
 
-        <div className="grid md:grid-cols-2">
-          <div>
-            {settings.imageUrl && (
-              <div className="relative h-48 w-full md:h-full md:min-h-[280px]">
-                <Image src={settings.imageUrl} alt="" fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
-              </div>
-            )}
-
-            <div className="p-7 text-center">
-              <h2 className="font-display mb-2.5 text-2xl">{settings.title}</h2>
-              <p className="mb-5 text-sm leading-relaxed text-ink-soft">{settings.body}</p>
-
-              <button
-                type="button"
-                onClick={copyCode}
-                className="w-full border border-dashed border-ink px-6 py-3 text-sm tracking-[0.1em] uppercase hover:bg-ivory-deep"
-              >
-                {copied ? "Kopyalandı ✓" : `${settings.discountCode} — ${settings.buttonLabel}`}
-              </button>
-            </div>
+        {settings.imageUrl && (
+          <div className="relative h-28 w-full">
+            <Image src={settings.imageUrl} alt="" fill sizes="340px" className="object-cover" />
           </div>
+        )}
 
-          <div className="flex flex-col justify-center border-t border-line p-7 md:border-t-0 md:border-l">
+        <div className="p-5 text-center">
+          <h2 className="font-display mb-1.5 text-lg">{settings.title}</h2>
+          <p className="mb-4 text-xs leading-relaxed text-ink-soft">{settings.body}</p>
+
+          <button
+            type="button"
+            onClick={copyCode}
+            className="w-full border border-dashed border-ink px-4 py-2.5 text-xs tracking-[0.1em] uppercase hover:bg-ivory-deep"
+          >
+            {copied ? "Kopyalandı ✓" : `${settings.discountCode} — ${settings.buttonLabel}`}
+          </button>
+
+          <div className="mt-5 border-t border-line pt-5">
             {state.info ? (
               <div className="text-center">
-                <div className="mb-3 text-2xl text-gold-deep">✓</div>
-                <p className="text-sm text-ink-soft">{state.info}</p>
+                <div className="mb-2 text-xl text-gold-deep">✓</div>
+                <p className="text-xs text-ink-soft">{state.info}</p>
               </div>
             ) : (
               <>
-                <h3 className="font-display mb-1 text-lg">Üye Ol, Kodu Kullan</h3>
-                <p className="mb-4 text-xs text-ink-soft">
-                  Hemen üye olun, indirim kodunuzu ilk siparişinizde kullanın.
-                </p>
-                <form action={formAction} className="flex flex-col gap-3">
+                <h3 className="font-display mb-3 text-sm">Üye Ol, Kodu Kullan</h3>
+                <form action={formAction} className="flex flex-col gap-2.5">
                   <input
                     name="fullName"
                     required
                     placeholder="Ad Soyad"
                     autoComplete="name"
-                    className="w-full border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-ink"
+                    className="w-full border border-line bg-white px-3 py-2 text-xs outline-none focus:border-ink"
                   />
                   <input
                     type="email"
@@ -114,7 +107,7 @@ export default function PromoPopup({
                     required
                     placeholder="E-posta"
                     autoComplete="email"
-                    className="w-full border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-ink"
+                    className="w-full border border-line bg-white px-3 py-2 text-xs outline-none focus:border-ink"
                   />
                   <input
                     type="password"
@@ -124,16 +117,16 @@ export default function PromoPopup({
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Şifre"
                     autoComplete="new-password"
-                    className="w-full border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-ink"
+                    className="w-full border border-line bg-white px-3 py-2 text-xs outline-none focus:border-ink"
                   />
                   <input type="hidden" name="passwordConfirm" value={password} />
 
-                  {state.error && <p className="text-xs text-status-red-fg">{state.error}</p>}
+                  {state.error && <p className="text-[11px] text-status-red-fg">{state.error}</p>}
 
                   <button
                     type="submit"
                     disabled={pending}
-                    className="mt-1 bg-ink px-6 py-3 text-xs font-medium tracking-[0.14em] text-ivory uppercase transition-colors hover:bg-gold-deep disabled:opacity-50"
+                    className="mt-0.5 bg-ink px-4 py-2.5 text-[11px] font-medium tracking-[0.14em] text-ivory uppercase transition-colors hover:bg-gold-deep disabled:opacity-50"
                   >
                     {pending ? "Kaydediliyor..." : "Üye Ol"}
                   </button>
@@ -141,25 +134,25 @@ export default function PromoPopup({
                 <Link
                   href="/hesabim/giris"
                   onClick={close}
-                  className="mt-3 text-center text-xs text-ink-soft underline hover:text-ink"
+                  className="mt-2.5 block text-center text-[11px] text-ink-soft underline hover:text-ink"
                 >
                   Zaten üye misiniz? Giriş yapın
                 </Link>
               </>
             )}
           </div>
-        </div>
 
-        {products.length > 0 && (
-          <div className="border-t border-line p-7">
-            <h3 className="font-display mb-4 text-center text-base">Beğenebileceğiniz Ürünler</h3>
-            <div className="grid grid-cols-2 gap-5 sm:grid-cols-3" onClick={close}>
-              {products.slice(0, 3).map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+          {products.length > 0 && (
+            <div className="mt-5 border-t border-line pt-5">
+              <h3 className="font-display mb-3 text-xs">Beğenebileceğiniz Ürünler</h3>
+              <div className="grid grid-cols-3 gap-2.5" onClick={close}>
+                {products.slice(0, 3).map((product) => (
+                  <ProductCard key={product.id} product={product} compact />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
