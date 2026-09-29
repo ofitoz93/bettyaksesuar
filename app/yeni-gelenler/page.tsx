@@ -4,7 +4,7 @@ import ProductCard from "@/components/ui/ProductCard";
 import { getNewArrivals } from "@/lib/data/products";
 
 export const metadata = {
-  title: "Yeni Gelenler | Verastone Aksesuar",
+  title: "Yeni Gelenler | Betty Aksesuar",
 };
 
 export default async function YeniGelenlerPage() {

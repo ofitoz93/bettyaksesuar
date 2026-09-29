@@ -5,7 +5,7 @@ import { getProducts } from "@/lib/data/products";
 import { getSiteSettings } from "@/lib/data/siteSettings";
 
 export const metadata = {
-  title: "Kişiye Özel Koleksiyon | Verastone Aksesuar",
+  title: "Kişiye Özel Koleksiyon | Betty Aksesuar",
 };
 
 export default async function KisiyeOzelPage() {

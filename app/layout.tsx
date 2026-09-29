@@ -13,7 +13,7 @@ import { getBestSellers } from "@/lib/data/products";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Verastone Aksesuar | Su Geçirmez Çelik Takı",
+  title: "Betty Aksesuar | Su Geçirmez Çelik Takı",
   description:
     "Su geçirmez, kararmaz, 18 ayar altın kaplama çelik takılar. Kolye, küpe, bileklik ve yüzük koleksiyonlarını keşfedin.",
 };

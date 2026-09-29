@@ -5,7 +5,7 @@ import { getShippingSettings } from "@/lib/data/shipping";
 import { getCurrentProfile } from "@/lib/data/profile";
 
 export const metadata = {
-  title: "Ödeme | Verastone Aksesuar",
+  title: "Ödeme | Betty Aksesuar",
 };
 
 export default async function OdemePage() {

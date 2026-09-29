@@ -1,4 +1,4 @@
-# Verastone Aksesuar — TAKI Projesi
+# Betty Aksesuar — TAKI Projesi
 
 Modern, premium bir kadın takı & aksesuar e-ticaret sitesi. Next.js (App
 Router) + TypeScript + Tailwind CSS ile geliştiriliyor.

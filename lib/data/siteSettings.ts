@@ -29,7 +29,7 @@ export interface SiteSettings {
 }
 
 const DEFAULT_SETTINGS: SiteSettings = {
-  siteName: "VERASTONE",
+  siteName: "BETTY",
   siteTagline: "AKSESUAR",
   logoUrl: null,
   announcementText:

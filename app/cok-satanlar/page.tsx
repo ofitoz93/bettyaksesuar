@@ -4,7 +4,7 @@ import ProductCard from "@/components/ui/ProductCard";
 import { getBestSellers } from "@/lib/data/products";
 
 export const metadata = {
-  title: "Çok Satanlar | Verastone Aksesuar",
+  title: "Çok Satanlar | Betty Aksesuar",
 };
 
 export default async function CokSatanlarPage() {

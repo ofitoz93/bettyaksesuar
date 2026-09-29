@@ -1,5 +1,5 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.EMAIL_FROM ?? "Verastone Aksesuar <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.EMAIL_FROM ?? "Betty Aksesuar <onboarding@resend.dev>";
 
 interface SendEmailParams {
   to: string;

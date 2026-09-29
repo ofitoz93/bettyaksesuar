@@ -13,7 +13,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="font-display text-[27px] tracking-[0.28em]">
-            VERASTONE
+            BETTY
           </div>
           <div className="mt-0.5 text-[9px] tracking-[0.42em] text-gold-deep">
             YÖNETİM PANELİ

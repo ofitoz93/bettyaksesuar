@@ -5,7 +5,7 @@ import { getProducts } from "@/lib/data/products";
 import { getSiteSettings } from "@/lib/data/siteSettings";
 
 export const metadata = {
-  title: "Gravür Seçenekleri | Verastone Aksesuar",
+  title: "Gravür Seçenekleri | Betty Aksesuar",
 };
 
 export default async function GravurPage() {

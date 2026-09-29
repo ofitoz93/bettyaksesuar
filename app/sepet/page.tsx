@@ -4,7 +4,7 @@ import CartView from "@/components/cart/CartView";
 import { getShippingSettings } from "@/lib/data/shipping";
 
 export const metadata = {
-  title: "Sepetim | Verastone Aksesuar",
+  title: "Sepetim | Betty Aksesuar",
 };
 
 export default async function SepetPage() {

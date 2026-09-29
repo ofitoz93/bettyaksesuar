@@ -4,7 +4,7 @@ import ProductCard from "@/components/ui/ProductCard";
 import { getDiscountedProducts } from "@/lib/data/products";
 
 export const metadata = {
-  title: "İndirimli Ürünler | Verastone Aksesuar",
+  title: "İndirimli Ürünler | Betty Aksesuar",
 };
 
 export default async function IndirimliUrunlerPage() {

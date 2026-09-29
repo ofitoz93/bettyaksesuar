@@ -10,7 +10,7 @@ interface ContentPageProps {
 export async function generateMetadata({ params }: ContentPageProps) {
   const { slug } = await params;
   const page = await getContentPage(slug);
-  return { title: page ? `${page.title} | Verastone Aksesuar` : "Sayfa Bulunamadı" };
+  return { title: page ? `${page.title} | Betty Aksesuar` : "Sayfa Bulunamadı" };
 }
 
 export default async function ContentPage({ params }: ContentPageProps) {

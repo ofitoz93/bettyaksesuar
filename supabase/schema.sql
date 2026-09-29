@@ -1,4 +1,4 @@
--- Verastone Aksesuar — Supabase şema
+-- Betty Aksesuar — Supabase şema
 -- Bunu Supabase Dashboard > SQL Editor içine yapıştırıp çalıştırın.
 
 create extension if not exists "pgcrypto";

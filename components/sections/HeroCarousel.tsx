@@ -26,7 +26,7 @@ export default function HeroCarousel({ images }: { images: string[] }) {
     return (
       <Image
         src={heroImage}
-        alt="Verastone Aksesuar"
+        alt="Betty Aksesuar"
         fill
         priority
         placeholder="blur"
@@ -42,7 +42,7 @@ export default function HeroCarousel({ images }: { images: string[] }) {
         <Image
           key={src}
           src={src}
-          alt="Verastone Aksesuar"
+          alt="Betty Aksesuar"
           fill
           priority={i === 0}
           quality={90}

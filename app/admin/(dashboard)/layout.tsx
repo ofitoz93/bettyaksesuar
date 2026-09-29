@@ -14,7 +14,7 @@ export default async function AdminDashboardLayout({
       <header className="border-b border-line bg-white px-8 py-4">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <Link href="/admin" className="font-display text-lg tracking-[0.2em]">
-            VERASTONE <span className="text-gold-deep">ADMIN</span>
+            BETTY AKSESUAR <span className="text-gold-deep">ADMIN</span>
           </Link>
           <div className="flex items-center gap-6">
             <Link

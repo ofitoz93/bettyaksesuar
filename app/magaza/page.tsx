@@ -7,7 +7,7 @@ import { getProducts } from "@/lib/data/products";
 import type { ProductCategory } from "@/lib/types";
 
 export const metadata = {
-  title: "Mağaza | Verastone Aksesuar",
+  title: "Mağaza | Betty Aksesuar",
 };
 
 interface MagazaPageProps {
