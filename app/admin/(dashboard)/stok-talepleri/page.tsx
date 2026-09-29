@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getPendingStockNotificationsForAdmin } from "@/lib/data/stockNotifications";
+import CloseStockNotificationButton from "./CloseStockNotificationButton";
 
 export default async function AdminStokTalepleriPage() {
   const groups = await getPendingStockNotificationsForAdmin();
@@ -33,11 +34,14 @@ export default async function AdminStokTalepleriPage() {
 
               <ul className="flex flex-col gap-1 border-t border-line pt-3 text-sm text-ink-soft">
                 {group.requests.map((request) => (
-                  <li key={request.id} className="flex items-center justify-between">
+                  <li key={request.id} className="flex items-center justify-between gap-3">
                     <span>{request.email}</span>
-                    <span className="text-xs text-ink-faint">
-                      {new Date(request.createdAt).toLocaleDateString("tr-TR")}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-ink-faint">
+                        {new Date(request.createdAt).toLocaleDateString("tr-TR")}
+                      </span>
+                      <CloseStockNotificationButton id={request.id} />
+                    </div>
                   </li>
                 ))}
               </ul>

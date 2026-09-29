@@ -824,3 +824,14 @@ export async function updateReturnRequestStatus(
   revalidatePath("/admin/iadeler");
   revalidatePath("/hesabim/siparislerim");
 }
+
+export async function closeStockNotification(id: string) {
+  const supabase = await createClient();
+  await supabase
+    .from("stock_notifications")
+    .update({ notified_at: new Date().toISOString() })
+    .eq("id", id);
+
+  revalidatePath("/admin/stok-talepleri");
+  revalidatePath("/admin");
+}
