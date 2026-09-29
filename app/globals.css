@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Brand palette */
+  --color-ivory: oklch(97% 0.012 75);
+  --color-ivory-deep: oklch(94% 0.016 75);
+  --color-ink: oklch(21% 0.015 75);
+  --color-ink-soft: oklch(42% 0.02 75);
+  --color-ink-faint: oklch(60% 0.015 75);
+  --color-gold: oklch(64% 0.075 75);
+  --color-gold-deep: oklch(50% 0.08 75);
+  --color-gold-tint: oklch(64% 0.075 75 / 0.14);
+  --color-line: oklch(88% 0.02 75);
+
+  /* Status colors (admin panel, order badges) */
+  --color-status-amber-bg: oklch(64% 0.075 75 / 0.16);
+  --color-status-amber-fg: oklch(42% 0.09 75);
+  --color-status-blue-bg: oklch(64% 0.075 230 / 0.16);
+  --color-status-blue-fg: oklch(42% 0.09 230);
+  --color-status-green-bg: oklch(64% 0.075 150 / 0.16);
+  --color-status-green-fg: oklch(38% 0.09 150);
+  --color-status-red-bg: oklch(64% 0.075 25 / 0.16);
+  --color-status-red-fg: oklch(42% 0.1 25);
+
+  /* Typography (self-hosted via @fontsource, see app/layout.tsx) */
+  --font-sans: "Jost", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+}
+
+body {
+  background-color: var(--color-ivory);
+  color: var(--color-ink);
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 500;
+}
