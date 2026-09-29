@@ -13,6 +13,8 @@ interface ProductRow {
   is_best_seller: boolean;
   description: string | null;
   stock: number;
+  cost_price: number | null;
+  sku: string | null;
   product_images: { url: string; position: number }[] | null;
 }
 
@@ -37,6 +39,8 @@ function mapRow(row: ProductRow): Product {
     description: row.description,
     images,
     stock: row.stock,
+    costPrice: row.cost_price,
+    sku: row.sku,
   };
 }
 

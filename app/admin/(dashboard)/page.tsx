@@ -11,12 +11,20 @@ export default async function AdminDashboardPage() {
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-[28px]">Ürünler</h1>
-        <Link
-          href="/admin/urun/yeni"
-          className="bg-ink px-6 py-3 text-xs font-medium tracking-[0.14em] text-ivory uppercase hover:bg-gold-deep"
-        >
-          + Yeni Ürün
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/admin/urun/toplu-ekle"
+            className="border border-ink px-6 py-3 text-xs font-medium tracking-[0.14em] text-ink uppercase hover:bg-ivory-deep"
+          >
+            Toplu Ürün Ekle
+          </Link>
+          <Link
+            href="/admin/urun/yeni"
+            className="bg-ink px-6 py-3 text-xs font-medium tracking-[0.14em] text-ivory uppercase hover:bg-gold-deep"
+          >
+            + Yeni Ürün
+          </Link>
+        </div>
       </div>
 
       {products.length === 0 ? (

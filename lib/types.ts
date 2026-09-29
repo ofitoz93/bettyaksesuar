@@ -23,6 +23,8 @@ export interface Product {
   description?: string | null;
   images?: string[];
   stock?: number;
+  costPrice?: number | null;
+  sku?: string | null;
 }
 
 export interface Testimonial {

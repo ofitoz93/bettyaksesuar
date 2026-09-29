@@ -42,6 +42,9 @@ function readProductFields(formData: FormData) {
   const compareAtPriceRaw = String(formData.get("compareAtPrice") ?? "").trim();
   const compareAtPrice = compareAtPriceRaw ? Number(compareAtPriceRaw) : null;
   const stock = Number(formData.get("stock") ?? 0);
+  const costPriceRaw = String(formData.get("costPrice") ?? "").trim();
+  const costPrice = costPriceRaw ? Number(costPriceRaw) : null;
+  const sku = String(formData.get("sku") ?? "").trim() || null;
   const description = String(formData.get("description") ?? "").trim();
   const isNew = formData.get("isNew") === "on";
   const isBestSeller = formData.get("isBestSeller") === "on";
@@ -61,15 +64,27 @@ function readProductFields(formData: FormData) {
     compareAtPrice,
     discountPercent,
     stock: Number.isFinite(stock) ? stock : 0,
+    costPrice,
+    sku,
     description: description || null,
     isNew,
     isBestSeller,
   };
 }
 
-async function uploadImages(formData: FormData, slug: string): Promise<string[]> {
+async function uploadImages(
+  formData: FormData,
+  slug: string,
+  fieldName = "images",
+): Promise<string[]> {
+  const files = formData
+    .getAll(fieldName)
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  return uploadImageFiles(files, slug);
+}
+
+async function uploadImageFiles(files: File[], slug: string): Promise<string[]> {
   const supabase = await createClient();
-  const files = formData.getAll("images").filter((f): f is File => f instanceof File && f.size > 0);
 
   const urls: string[] = [];
   for (const file of files) {
@@ -140,6 +155,8 @@ export async function createProduct(
       compare_at_price: fields.compareAtPrice,
       discount_percent: fields.discountPercent,
       stock: fields.stock,
+      cost_price: fields.costPrice,
+      sku: fields.sku,
       description: fields.description,
       is_new: fields.isNew,
       is_best_seller: fields.isBestSeller,
@@ -166,6 +183,84 @@ export async function createProduct(
   revalidatePath("/magaza");
   revalidatePath("/");
   redirect("/admin");
+}
+
+export interface BulkProductResult {
+  name: string;
+  error?: string;
+}
+
+export interface BulkActionState {
+  results?: BulkProductResult[];
+}
+
+export async function bulkCreateProducts(
+  _prevState: BulkActionState,
+  formData: FormData,
+): Promise<BulkActionState> {
+  const rowIds = formData.getAll("rowIds").map(String);
+  const supabase = await createClient();
+  const results: BulkProductResult[] = [];
+
+  for (const id of rowIds) {
+    const name = String(formData.get(`name-${id}`) ?? "").trim();
+    const category = String(formData.get(`category-${id}`) ?? "") as ProductCategory;
+    const price = Number(formData.get(`price-${id}`));
+    const stock = Number(formData.get(`stock-${id}`) ?? 0);
+    const costPriceRaw = String(formData.get(`costPrice-${id}`) ?? "").trim();
+    const costPrice = costPriceRaw ? Number(costPriceRaw) : null;
+    const sku = String(formData.get(`sku-${id}`) ?? "").trim() || null;
+
+    if (!name && !category && !costPriceRaw) {
+      // Boş bırakılmış satır — sessizce atla.
+      continue;
+    }
+
+    if (!name || !category || !Number.isFinite(price)) {
+      results.push({ name: name || "(isimsiz satır)", error: "Ürün adı, kategori ve fiyat zorunlu" });
+      continue;
+    }
+
+    const slug = `${slugify(name)}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+    const { data: product, error } = await supabase
+      .from("products")
+      .insert({
+        slug,
+        name,
+        category,
+        price,
+        stock: Number.isFinite(stock) ? stock : 0,
+        cost_price: costPrice,
+        sku,
+      })
+      .select("id")
+      .single();
+
+    if (error || !product) {
+      results.push({ name, error: error?.message ?? "kaydedilemedi" });
+      continue;
+    }
+
+    const files = formData
+      .getAll(`images-${id}`)
+      .filter((f): f is File => f instanceof File && f.size > 0);
+    const imageUrls = await uploadImageFiles(files, slug);
+
+    if (imageUrls.length > 0) {
+      await supabase.from("product_images").insert(
+        imageUrls.map((url, index) => ({ product_id: product.id, url, position: index })),
+      );
+    }
+
+    results.push({ name });
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/magaza");
+  revalidatePath("/");
+
+  return { results };
 }
 
 export async function updateProduct(
@@ -198,6 +293,8 @@ export async function updateProduct(
       compare_at_price: fields.compareAtPrice,
       discount_percent: fields.discountPercent,
       stock: fields.stock,
+      cost_price: fields.costPrice,
+      sku: fields.sku,
       description: fields.description,
       is_new: fields.isNew,
       is_best_seller: fields.isBestSeller,
