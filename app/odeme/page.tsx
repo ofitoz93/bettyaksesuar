@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import CheckoutForm from "@/components/checkout/CheckoutForm";
 import { getShippingSettings } from "@/lib/data/shipping";
 import { getCurrentProfile } from "@/lib/data/profile";
+import { isPaytrConfigured } from "@/lib/paytr";
 
 export const metadata = {
   title: "Ödeme | Betty Aksesuar",
@@ -25,7 +26,11 @@ export default async function OdemePage() {
             </div>
             <h1 className="font-display mt-2.5 text-[34px]">Siparişi Tamamla</h1>
           </div>
-          <CheckoutForm shippingSettings={shippingSettings} profile={profile} />
+          <CheckoutForm
+            shippingSettings={shippingSettings}
+            profile={profile}
+            paytrEnabled={isPaytrConfigured()}
+          />
         </div>
       </main>
       <Footer />

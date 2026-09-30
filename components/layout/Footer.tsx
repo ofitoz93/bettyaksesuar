@@ -8,6 +8,7 @@ const helpLinks: { label: string; href: string }[] = [
   { label: "Kargo & Teslimat", href: "/kargo-teslimat" },
   { label: "Garanti & Bakım", href: "/garanti-bakim" },
   { label: "İade & Değişim", href: "/iade-degisim" },
+  { label: "Mesafeli Satış Sözleşmesi", href: "/mesafeli-satis-sozlesmesi" },
 ];
 
 const companyLinks: { label: string; href: string }[] = [
@@ -103,6 +104,12 @@ export default async function Footer() {
             Kredi Kartı · Kapıda Ödeme · Havale/EFT
           </div>
         </div>
+
+        <p className="mt-4 border-t border-line pt-4 text-[11px] leading-relaxed text-ink-faint">
+          Sitemizdeki bazı ürün görselleri, ürünün temsili görünümünü aktarmak amacıyla yapay zeka
+          ile oluşturulmuş veya iyileştirilmiştir; gerçek ürün, ışık ve ekran farklarına bağlı
+          olarak görsellerden hafif farklılık gösterebilir.
+        </p>
       </div>
     </footer>
   );

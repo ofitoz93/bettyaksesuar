@@ -1,5 +1,5 @@
 import { getAllOrdersForAdmin } from "@/lib/data/orders";
-import { paymentLabel } from "@/lib/orders";
+import { paymentLabel, paymentStatusLabel } from "@/lib/orders";
 import OrderFulfillmentForm from "./OrderFulfillmentForm";
 
 export default async function AdminSiparislerPage() {
@@ -21,6 +21,19 @@ export default async function AdminSiparislerPage() {
                   <div className="text-xs text-ink-faint">
                     {new Date(order.createdAt).toLocaleString("tr-TR")}
                   </div>
+                  {order.paymentMethod === "kredi_karti" && (
+                    <span
+                      className={`mt-1 inline-block px-2 py-0.5 text-[10px] uppercase ${
+                        order.paymentStatus === "odendi"
+                          ? "bg-status-green-bg text-status-green-fg"
+                          : order.paymentStatus === "basarisiz"
+                            ? "bg-status-red-bg text-status-red-fg"
+                            : "bg-status-amber-bg text-status-amber-fg"
+                      }`}
+                    >
+                      {paymentStatusLabel(order.paymentStatus)}
+                    </span>
+                  )}
                 </div>
                 <OrderFulfillmentForm
                   orderId={order.id}

@@ -37,3 +37,62 @@ h2,
 h3 {
   font-weight: 500;
 }
+
+@keyframes sparkle-field-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sparkle-field {
+  animation: sparkle-field-spin 6s linear infinite;
+  animation-play-state: paused;
+}
+
+.group:hover .sparkle-field {
+  animation-play-state: running;
+}
+
+@keyframes sparkle-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.35) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25) rotate(45deg);
+  }
+}
+
+.sparkle {
+  position: absolute;
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle,
+    white 0%,
+    white 30%,
+    var(--color-gold) 65%,
+    transparent 80%
+  );
+  clip-path: polygon(
+    50% 0%,
+    61% 39%,
+    100% 50%,
+    61% 61%,
+    50% 100%,
+    39% 61%,
+    0% 50%,
+    39% 39%
+  );
+  filter: drop-shadow(0 0 3px white)
+    drop-shadow(0 0 7px color-mix(in oklch, var(--color-gold) 90%, white 10%));
+  opacity: 0;
+  animation: sparkle-twinkle 1.4s ease-in-out infinite;
+  animation-play-state: paused;
+  pointer-events: none;
+}
+
+.group:hover .sparkle {
+  animation-play-state: running;
+}

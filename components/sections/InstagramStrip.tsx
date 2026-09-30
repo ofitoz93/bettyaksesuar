@@ -14,6 +14,10 @@ const placeholderTiles = [
 export default async function InstagramStrip() {
   const [images, settings] = await Promise.all([getSocialFeedImages(), getSiteSettings()]);
 
+  if (!settings.socialFeedEnabled) {
+    return null;
+  }
+
   return (
     <section className="px-8 py-22">
       <div className="mx-auto max-w-6xl">

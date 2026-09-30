@@ -1,20 +1,33 @@
 import Link from "next/link";
 import { getTestimonialsForAdmin } from "@/lib/data/testimonials";
+import { getSiteSettings } from "@/lib/data/siteSettings";
+import { updateTestimonialsEnabled } from "@/app/admin/actions";
+import SectionVisibilityToggle from "@/components/admin/SectionVisibilityToggle";
 import DeleteTestimonialButton from "./DeleteTestimonialButton";
 
 export default async function AdminTestimonialsPage() {
-  const testimonials = await getTestimonialsForAdmin();
+  const [testimonials, settings] = await Promise.all([
+    getTestimonialsForAdmin(),
+    getSiteSettings(),
+  ]);
 
   return (
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-[28px]">Müşteri Yorumları</h1>
-        <Link
-          href="/admin/yorumlar/yeni"
-          className="bg-ink px-6 py-3 text-xs font-medium tracking-[0.14em] text-ivory uppercase hover:bg-gold-deep"
-        >
-          + Yeni Yorum
-        </Link>
+        <div className="flex items-center gap-5">
+          <SectionVisibilityToggle
+            initialEnabled={settings.testimonialsEnabled}
+            onToggle={updateTestimonialsEnabled}
+            label="“Müşterilerimiz Anlatıyor” bölümünü sitede göster"
+          />
+          <Link
+            href="/admin/yorumlar/yeni"
+            className="bg-ink px-6 py-3 text-xs font-medium tracking-[0.14em] text-ivory uppercase hover:bg-gold-deep"
+          >
+            + Yeni Yorum
+          </Link>
+        </div>
       </div>
 
       {testimonials.length === 0 ? (

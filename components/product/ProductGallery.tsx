@@ -23,6 +23,9 @@ export default function ProductGallery({ product }: { product: Product }) {
     setOrigin(`${x}% ${y}%`);
   };
 
+  const showPrev = () => setActiveIndex((i) => (i - 1 + images.length) % images.length);
+  const showNext = () => setActiveIndex((i) => (i + 1) % images.length);
+
   return (
     <div>
       <div
@@ -38,8 +41,8 @@ export default function ProductGallery({ product }: { product: Product }) {
             src={active}
             alt={product.name}
             fill
-            quality={90}
-            sizes="(min-width: 768px) 50vw, 100vw"
+            quality={100}
+            sizes="(min-width: 768px) 100vw, 200vw"
             className="object-cover transition-transform duration-300 ease-out"
             style={{
               transformOrigin: origin,
@@ -49,6 +52,31 @@ export default function ProductGallery({ product }: { product: Product }) {
           />
         ) : (
           <CategoryIcon category={product.category} size={96} className="text-[#8C6A44]" />
+        )}
+
+        {images.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={showPrev}
+              aria-label="Önceki görsel"
+              className="absolute top-1/2 left-3 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-ink/20 bg-ivory/80 text-ink transition-colors hover:border-ink hover:bg-ivory"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+                <path d="M15 5l-7 7 7 7" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={showNext}
+              aria-label="Sonraki görsel"
+              className="absolute top-1/2 right-3 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-ink/20 bg-ivory/80 text-ink transition-colors hover:border-ink hover:bg-ivory"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+                <path d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </>
         )}
       </div>
 

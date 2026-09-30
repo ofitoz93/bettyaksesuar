@@ -21,11 +21,15 @@ export interface SiteSettings {
   campaignHeading: string;
   campaignBody: string;
   campaignButtonLabel: string;
+  campaignEnabled: boolean;
   engravingImageUrl: string | null;
   engravingEyebrow: string;
   engravingHeading: string;
   engravingBody: string;
   engravingButtonLabel: string;
+  engravingEnabled: boolean;
+  testimonialsEnabled: boolean;
+  socialFeedEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: SiteSettings = {
@@ -50,12 +54,16 @@ const DEFAULT_SETTINGS: SiteSettings = {
   campaignHeading: "İsminizin İlk Harfiyle,\nSizin İçin Tasarlandı",
   campaignBody: "Harf kolyeleri ve gravürlü parçalarla, taşıdığınız her şeyi kendinize özel kılın.",
   campaignButtonLabel: "Şimdi Kişiselleştir",
+  campaignEnabled: true,
   engravingImageUrl: null,
   engravingEyebrow: "EL İŞÇİLİĞİ",
   engravingHeading: "Gravürle Anlam Kat",
   engravingBody:
     "Sevdiklerinize özel bir hediye mi arıyorsunuz? İsim, tarih ya da kısa bir mesajı, seçtiğiniz takının üzerine ustalıkla işleyelim. Her parça, taşıyanı kadar özel.",
   engravingButtonLabel: "Gravür Seçeneklerini Gör",
+  engravingEnabled: true,
+  testimonialsEnabled: true,
+  socialFeedEnabled: true,
 };
 
 export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
@@ -90,10 +98,14 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
     campaignHeading: data.campaign_heading,
     campaignBody: data.campaign_body,
     campaignButtonLabel: data.campaign_button_label,
+    campaignEnabled: data.campaign_enabled,
     engravingImageUrl: data.engraving_image_url,
     engravingEyebrow: data.engraving_eyebrow,
     engravingHeading: data.engraving_heading,
     engravingBody: data.engraving_body,
     engravingButtonLabel: data.engraving_button_label,
+    engravingEnabled: data.engraving_enabled,
+    testimonialsEnabled: data.testimonials_enabled,
+    socialFeedEnabled: data.social_feed_enabled,
   };
 });

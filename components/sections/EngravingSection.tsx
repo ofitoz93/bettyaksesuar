@@ -5,6 +5,10 @@ import { getSiteSettings } from "@/lib/data/siteSettings";
 export default async function EngravingSection() {
   const settings = await getSiteSettings();
 
+  if (!settings.engravingEnabled) {
+    return null;
+  }
+
   return (
     <section className="px-8 py-24">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-16 md:flex-row">

@@ -138,7 +138,18 @@ export default function SiteSettingsForm({ settings }: { settings: SiteSettings 
       </div>
 
       <div className="border-t border-line pt-6">
-        <h2 className="mb-4 text-sm font-medium">Kişiye Özel Koleksiyon Bölümü</h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-medium">Kişiye Özel Koleksiyon Bölümü</h2>
+          <label className="flex items-center gap-2 text-xs text-ink-soft">
+            <input
+              type="checkbox"
+              name="campaignEnabled"
+              defaultChecked={settings.campaignEnabled}
+              className="h-4 w-4"
+            />
+            Sitede göster
+          </label>
+        </div>
         {settings.campaignImageUrl && (
           <div className="relative mb-3 h-32 w-56 overflow-hidden border border-line">
             <Image
@@ -203,7 +214,18 @@ export default function SiteSettingsForm({ settings }: { settings: SiteSettings 
       </div>
 
       <div className="border-t border-line pt-6">
-        <h2 className="mb-4 text-sm font-medium">El İşçiliği Bölümü</h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-medium">El İşçiliği Bölümü</h2>
+          <label className="flex items-center gap-2 text-xs text-ink-soft">
+            <input
+              type="checkbox"
+              name="engravingEnabled"
+              defaultChecked={settings.engravingEnabled}
+              className="h-4 w-4"
+            />
+            Sitede göster
+          </label>
+        </div>
         {settings.engravingImageUrl && (
           <div className="relative mb-3 h-32 w-56 overflow-hidden border border-line">
             <Image

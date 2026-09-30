@@ -13,6 +13,7 @@ export interface OrderSummary {
   orderNumber: string;
   status: string;
   paymentMethod: string;
+  paymentStatus: string;
   subtotal: number;
   shippingFee: number;
   total: number;
@@ -46,6 +47,7 @@ export async function getMyOrders(): Promise<OrderSummary[]> {
     orderNumber: row.order_number,
     status: row.status,
     paymentMethod: row.payment_method,
+    paymentStatus: row.payment_status,
     subtotal: Number(row.subtotal),
     shippingFee: Number(row.shipping_fee ?? 0),
     total: Number(row.total),
@@ -80,6 +82,7 @@ export async function getAllOrdersForAdmin(): Promise<AdminOrderSummary[]> {
     orderNumber: row.order_number,
     status: row.status,
     paymentMethod: row.payment_method,
+    paymentStatus: row.payment_status,
     subtotal: Number(row.subtotal),
     shippingFee: Number(row.shipping_fee ?? 0),
     total: Number(row.total),

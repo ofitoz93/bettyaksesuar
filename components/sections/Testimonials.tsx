@@ -1,4 +1,5 @@
 import { getTestimonials } from "@/lib/data/testimonials";
+import { getSiteSettings } from "@/lib/data/siteSettings";
 
 function StarRow({ count }: { count: number }) {
   return (
@@ -13,9 +14,9 @@ function StarRow({ count }: { count: number }) {
 }
 
 export default async function Testimonials() {
-  const testimonials = await getTestimonials();
+  const [testimonials, settings] = await Promise.all([getTestimonials(), getSiteSettings()]);
 
-  if (testimonials.length === 0) {
+  if (!settings.testimonialsEnabled || testimonials.length === 0) {
     return null;
   }
 

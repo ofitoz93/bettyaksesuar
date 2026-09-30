@@ -7,15 +7,17 @@ import { createClient } from "@/lib/supabase/client";
 import { createOrder, type CheckoutState } from "@/app/odeme/actions";
 import { calculateShippingFee, type ShippingSettings } from "@/lib/shipping";
 import type { CurrentProfile } from "@/lib/data/profile";
+import PaytrPaymentFrame from "./PaytrPaymentFrame";
 
 const initialState: CheckoutState = {};
 
 interface CheckoutFormProps {
   shippingSettings: ShippingSettings;
   profile: CurrentProfile | null;
+  paytrEnabled: boolean;
 }
 
-export default function CheckoutForm({ shippingSettings, profile }: CheckoutFormProps) {
+export default function CheckoutForm({ shippingSettings, profile, paytrEnabled }: CheckoutFormProps) {
   const { items, totalPrice, clear, removeItem, updateQuantity } = useCart();
   const [state, formAction, pending] = useActionState(createOrder, initialState);
   const shippingFee = calculateShippingFee(totalPrice, shippingSettings);
@@ -95,6 +97,10 @@ export default function CheckoutForm({ shippingSettings, profile }: CheckoutForm
   }, [state.order]);
 
   if (state.order) {
+    if (state.order.paymentMethod === "kredi_karti") {
+      return <PaytrPaymentFrame orderId={state.order.id} />;
+    }
+
     return (
       <div className="mx-auto max-w-lg py-10 text-center">
         <div className="mb-3 text-2xl text-gold-deep">✓</div>
@@ -195,8 +201,19 @@ export default function CheckoutForm({ shippingSettings, profile }: CheckoutForm
         <div>
           <label className="mb-2 block text-xs tracking-wide text-ink-soft">Ödeme Yöntemi</label>
           <div className="flex flex-col gap-2.5">
+            {paytrEnabled && (
+              <label className="flex items-center gap-2.5 border border-line px-4 py-3 text-sm has-[:checked]:border-ink">
+                <input type="radio" name="paymentMethod" value="kredi_karti" defaultChecked />
+                Kredi / Banka Kartı (Online Ödeme)
+              </label>
+            )}
             <label className="flex items-center gap-2.5 border border-line px-4 py-3 text-sm has-[:checked]:border-ink">
-              <input type="radio" name="paymentMethod" value="kapida_odeme" defaultChecked />
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="kapida_odeme"
+                defaultChecked={!paytrEnabled}
+              />
               Kapıda Ödeme
             </label>
             <label className="flex items-center gap-2.5 border border-line px-4 py-3 text-sm has-[:checked]:border-ink">
@@ -213,6 +230,28 @@ export default function CheckoutForm({ shippingSettings, profile }: CheckoutForm
             className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
           />
         </Field>
+
+        <label className="flex items-start gap-2.5 text-xs text-ink-soft">
+          <input type="checkbox" name="termsAccepted" required className="mt-0.5" />
+          <span>
+            <Link
+              href="/mesafeli-satis-sozlesmesi"
+              target="_blank"
+              className="text-ink underline hover:text-gold-deep"
+            >
+              Mesafeli Satış Sözleşmesi
+            </Link>
+            &apos;ni ve{" "}
+            <Link
+              href="/on-bilgilendirme-formu"
+              target="_blank"
+              className="text-ink underline hover:text-gold-deep"
+            >
+              Ön Bilgilendirme Formu
+            </Link>
+            &apos;nu okudum, kabul ediyorum.
+          </span>
+        </label>
 
         {state.error && <p className="text-xs text-status-red-fg">{state.error}</p>}
 

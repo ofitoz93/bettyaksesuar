@@ -425,10 +425,12 @@ export async function updateSiteSettings(
   const campaignHeading = String(formData.get("campaignHeading") ?? "").trim();
   const campaignBody = String(formData.get("campaignBody") ?? "").trim();
   const campaignButtonLabel = String(formData.get("campaignButtonLabel") ?? "").trim();
+  const campaignEnabled = formData.get("campaignEnabled") === "on";
   const engravingEyebrow = String(formData.get("engravingEyebrow") ?? "").trim();
   const engravingHeading = String(formData.get("engravingHeading") ?? "").trim();
   const engravingBody = String(formData.get("engravingBody") ?? "").trim();
   const engravingButtonLabel = String(formData.get("engravingButtonLabel") ?? "").trim();
+  const engravingEnabled = formData.get("engravingEnabled") === "on";
 
   if (
     !siteName ||
@@ -478,10 +480,12 @@ export async function updateSiteSettings(
       campaign_heading: campaignHeading,
       campaign_body: campaignBody,
       campaign_button_label: campaignButtonLabel,
+      campaign_enabled: campaignEnabled,
       engraving_eyebrow: engravingEyebrow,
       engraving_heading: engravingHeading,
       engraving_body: engravingBody,
       engraving_button_label: engravingButtonLabel,
+      engraving_enabled: engravingEnabled,
       ...(logoUrl ? { logo_url: logoUrl } : {}),
       ...(campaignImageUrl ? { campaign_image_url: campaignImageUrl } : {}),
       ...(engravingImageUrl ? { engraving_image_url: engravingImageUrl } : {}),
@@ -496,6 +500,22 @@ export async function updateSiteSettings(
   revalidatePath("/", "layout");
   revalidatePath("/admin/ayarlar/anasayfa");
   return {};
+}
+
+export async function updateTestimonialsEnabled(enabled: boolean) {
+  const supabase = await createClient();
+  await supabase.from("site_settings").update({ testimonials_enabled: enabled }).eq("id", 1);
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/yorumlar");
+}
+
+export async function updateSocialFeedEnabled(enabled: boolean) {
+  const supabase = await createClient();
+  await supabase.from("site_settings").update({ social_feed_enabled: enabled }).eq("id", 1);
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/ayarlar/sosyal-medya");
 }
 
 export async function updateCategoryImage(

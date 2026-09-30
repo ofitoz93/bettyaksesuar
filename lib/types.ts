@@ -44,4 +44,4 @@ export interface CartItem {
   stock: number;
 }
 
-export type PaymentMethod = "kapida_odeme" | "havale";
+export type PaymentMethod = "kapida_odeme" | "havale" | "kredi_karti";

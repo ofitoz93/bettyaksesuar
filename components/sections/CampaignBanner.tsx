@@ -4,6 +4,11 @@ import { getSiteSettings } from "@/lib/data/siteSettings";
 
 export default async function CampaignBanner() {
   const settings = await getSiteSettings();
+
+  if (!settings.campaignEnabled) {
+    return null;
+  }
+
   const headingLines = settings.campaignHeading.split("\n");
 
   return (
