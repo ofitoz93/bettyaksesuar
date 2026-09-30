@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export interface AuthState {
@@ -80,4 +81,16 @@ export async function customerLogout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/hesabim/giris");
+}
+
+export async function cancelMyOrder(orderId: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_my_order", { p_order_id: orderId });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/hesabim/siparislerim");
+  return {};
 }

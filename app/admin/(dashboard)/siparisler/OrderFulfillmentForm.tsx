@@ -80,6 +80,11 @@ export default function OrderFulfillmentForm({
         />
       </div>
 
+      <label className="flex items-center gap-1.5 pb-1.5 text-[11px] text-ink-soft">
+        <input type="checkbox" name="notifyCustomer" defaultChecked className="h-3.5 w-3.5" />
+        Müşteriye bildir
+      </label>
+
       <button
         type="submit"
         disabled={pending}

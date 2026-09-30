@@ -28,7 +28,7 @@ export default function ShippingSettingsForm({ settings }: { settings: ShippingS
       </div>
       <div>
         <label className="mb-1.5 block text-xs tracking-wide text-ink-soft">
-          Standart Kargo Ücreti (₺)
+          Standart Kargo Ücreti (₺, sabit — sepetteki ilk ürün için)
         </label>
         <input
           name="standardShippingFee"
@@ -37,6 +37,20 @@ export default function ShippingSettingsForm({ settings }: { settings: ShippingS
           min="0"
           required
           defaultValue={settings.standardShippingFee}
+          className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
+        />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-xs tracking-wide text-ink-soft">
+          Parça Başına Ek Ücret (₺, ikinci üründen itibaren her ürün için)
+        </label>
+        <input
+          name="perItemFee"
+          type="number"
+          step="0.01"
+          min="0"
+          required
+          defaultValue={settings.perItemFee}
           className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
         />
       </div>

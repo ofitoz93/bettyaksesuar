@@ -21,7 +21,8 @@ interface CheckoutFormProps {
 export default function CheckoutForm({ shippingSettings, profile, paymentMethods }: CheckoutFormProps) {
   const { items, totalPrice, clear, removeItem, updateQuantity } = useCart();
   const [state, formAction, pending] = useActionState(createOrder, initialState);
-  const shippingFee = calculateShippingFee(totalPrice, shippingSettings);
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const shippingFee = calculateShippingFee(totalPrice, itemCount, shippingSettings);
   const [cartNotice, setCartNotice] = useState<string | null>(null);
   const [validated, setValidated] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState(paymentMethods[0]?.code ?? "");

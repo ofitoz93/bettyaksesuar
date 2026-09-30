@@ -7,7 +7,8 @@ import { calculateShippingFee, type ShippingSettings } from "@/lib/shipping";
 
 export default function CartView({ shippingSettings }: { shippingSettings: ShippingSettings }) {
   const { items, totalPrice, updateQuantity, removeItem } = useCart();
-  const shippingFee = calculateShippingFee(totalPrice, shippingSettings);
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const shippingFee = calculateShippingFee(totalPrice, itemCount, shippingSettings);
   const remainingForFreeShipping = Math.max(
     0,
     shippingSettings.freeShippingThreshold - totalPrice,

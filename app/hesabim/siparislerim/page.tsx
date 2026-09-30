@@ -4,6 +4,7 @@ import { getMyReturnRequests } from "@/lib/data/returns";
 import { statusLabel, paymentLabel } from "@/lib/orders";
 import { getTrackingUrl } from "@/lib/shippingCarriers";
 import ReturnRequestButton from "./ReturnRequestButton";
+import CancelOrderButton from "./CancelOrderButton";
 
 const STATUS_TONE: Record<string, string> = {
   beklemede: "bg-status-amber-bg text-status-amber-fg",
@@ -92,6 +93,7 @@ export default async function SiparislerimPage() {
                     existingStatus={returnStatusByOrderId.get(order.id) ?? null}
                   />
                 )}
+                {order.status === "beklemede" && <CancelOrderButton orderId={order.id} />}
               </div>
             );
           })}

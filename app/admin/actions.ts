@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 import { notifyBackInStockCustomers } from "@/lib/data/stockNotifications";
 import { fetchTcmbUsdRate } from "@/lib/tcmb";
+import { sendEmail } from "@/lib/email";
+import { statusLabel } from "@/lib/orders";
 import type { ProductCategory } from "@/lib/types";
 
 export interface ActionState {
@@ -488,8 +490,13 @@ export async function updateShippingSettings(
 ): Promise<ActionState> {
   const freeShippingThreshold = Number(formData.get("freeShippingThreshold"));
   const standardShippingFee = Number(formData.get("standardShippingFee"));
+  const perItemFee = Number(formData.get("perItemFee"));
 
-  if (!Number.isFinite(freeShippingThreshold) || !Number.isFinite(standardShippingFee)) {
+  if (
+    !Number.isFinite(freeShippingThreshold) ||
+    !Number.isFinite(standardShippingFee) ||
+    !Number.isFinite(perItemFee)
+  ) {
     return { error: "Lütfen geçerli sayılar girin." };
   }
 
@@ -499,6 +506,7 @@ export async function updateShippingSettings(
     .update({
       free_shipping_threshold: freeShippingThreshold,
       standard_shipping_fee: standardShippingFee,
+      per_item_fee: perItemFee,
       updated_at: new Date().toISOString(),
     })
     .eq("id", 1);
@@ -985,6 +993,7 @@ export async function updateOrderFulfillment(
   const status = String(formData.get("status") ?? "");
   const shippingCarrier = String(formData.get("shippingCarrier") ?? "").trim();
   const trackingNumber = String(formData.get("trackingNumber") ?? "").trim();
+  const notifyCustomer = formData.get("notifyCustomer") === "on";
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -998,6 +1007,30 @@ export async function updateOrderFulfillment(
 
   if (error) {
     return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  if (notifyCustomer) {
+    const { data: order } = await supabase
+      .from("orders")
+      .select("order_number, guest_name, guest_email")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (order?.guest_email) {
+      const trackingLine =
+        shippingCarrier && trackingNumber
+          ? `<p>Kargo firması: <strong>${shippingCarrier}</strong><br/>Takip numarası: <strong>${trackingNumber}</strong></p>`
+          : "";
+
+      await sendEmail({
+        to: order.guest_email,
+        subject: `Siparişiniz güncellendi — ${order.order_number}`,
+        html: `<p>Merhaba ${order.guest_name},</p>
+<p><strong>${order.order_number}</strong> numaralı siparişinizin durumu güncellendi: <strong>${statusLabel(status)}</strong></p>
+${trackingLine}
+<p>Siparişinizi hesabınızdan takip edebilirsiniz.</p>`,
+      }).catch((err) => console.error("updateOrderFulfillment notify error:", err));
+    }
   }
 
   revalidatePath("/admin/siparisler");
