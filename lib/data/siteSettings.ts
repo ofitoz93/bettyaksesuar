@@ -1,6 +1,11 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
+export interface NavLink {
+  label: string;
+  href: string;
+}
+
 export interface SiteSettings {
   siteName: string;
   siteTagline: string;
@@ -30,6 +35,11 @@ export interface SiteSettings {
   engravingEnabled: boolean;
   testimonialsEnabled: boolean;
   socialFeedEnabled: boolean;
+  headerPrimaryLinks: NavLink[];
+  headerSecondaryLinks: NavLink[];
+  footerDescription: string;
+  footerHelpLinks: NavLink[];
+  footerCompanyLinks: NavLink[];
 }
 
 const DEFAULT_SETTINGS: SiteSettings = {
@@ -64,6 +74,30 @@ const DEFAULT_SETTINGS: SiteSettings = {
   engravingEnabled: true,
   testimonialsEnabled: true,
   socialFeedEnabled: true,
+  headerPrimaryLinks: [
+    { label: "KOLYE", href: "/magaza?kategori=kolye" },
+    { label: "KÜPE", href: "/magaza?kategori=kupe" },
+    { label: "BİLEKLİK", href: "/magaza?kategori=bileklik" },
+    { label: "YÜZÜK", href: "/magaza?kategori=yuzuk" },
+  ],
+  headerSecondaryLinks: [
+    { label: "YENİ GELENLER", href: "/yeni-gelenler" },
+    { label: "İNDİRİM", href: "/indirimli-urunler" },
+    { label: "TÜM ÜRÜNLER", href: "/magaza" },
+  ],
+  footerDescription:
+    "Su geçirmez, kararmaz çelik takılar. Günlük kullanım için tasarlandı, ömür boyu yanınızda.",
+  footerHelpLinks: [
+    { label: "Sıkça Sorulan Sorular", href: "/sss" },
+    { label: "Kargo & Teslimat", href: "/kargo-teslimat" },
+    { label: "Garanti & Bakım", href: "/garanti-bakim" },
+    { label: "İade & Değişim", href: "/iade-degisim" },
+    { label: "Mesafeli Satış Sözleşmesi", href: "/mesafeli-satis-sozlesmesi" },
+  ],
+  footerCompanyLinks: [
+    { label: "Hakkımızda", href: "/hakkimizda" },
+    { label: "İletişim", href: "/iletisim" },
+  ],
 };
 
 export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
@@ -107,5 +141,10 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
     engravingEnabled: data.engraving_enabled,
     testimonialsEnabled: data.testimonials_enabled,
     socialFeedEnabled: data.social_feed_enabled,
+    headerPrimaryLinks: data.header_primary_links ?? DEFAULT_SETTINGS.headerPrimaryLinks,
+    headerSecondaryLinks: data.header_secondary_links ?? DEFAULT_SETTINGS.headerSecondaryLinks,
+    footerDescription: data.footer_description ?? DEFAULT_SETTINGS.footerDescription,
+    footerHelpLinks: data.footer_help_links ?? DEFAULT_SETTINGS.footerHelpLinks,
+    footerCompanyLinks: data.footer_company_links ?? DEFAULT_SETTINGS.footerCompanyLinks,
   };
 });

@@ -1,5 +1,16 @@
-import ComingSoon from "@/components/admin/ComingSoon";
+import { getSiteSettings } from "@/lib/data/siteSettings";
+import HeaderForm from "./HeaderForm";
 
-export default function TemaHeaderPage() {
-  return <ComingSoon title="Üst Kısım (Header) Düzeni" note="Tema Düzeni fazında eklenecek." />;
+export default async function TemaHeaderPage() {
+  const settings = await getSiteSettings();
+
+  return (
+    <div>
+      <h1 className="font-display mb-8 text-[28px]">Üst Kısım (Header) Düzeni</h1>
+      <HeaderForm
+        primaryLinks={settings.headerPrimaryLinks}
+        secondaryLinks={settings.headerSecondaryLinks}
+      />
+    </div>
+  );
 }

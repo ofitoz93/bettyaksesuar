@@ -1137,6 +1137,86 @@ export async function updatePaymentMethod(
   return {};
 }
 
+// ============ TEMA DÜZENİ: HEADER / FOOTER ============
+
+function parseNavLinks(raw: string): { label: string; href: string }[] | null {
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed
+      .map((item) => ({ label: String(item.label ?? "").trim(), href: String(item.href ?? "").trim() }))
+      .filter((item) => item.label && item.href);
+  } catch {
+    return null;
+  }
+}
+
+export async function updateHeaderLinks(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const primaryLinks = parseNavLinks(String(formData.get("headerPrimaryLinks") ?? "[]"));
+  const secondaryLinks = parseNavLinks(String(formData.get("headerSecondaryLinks") ?? "[]"));
+
+  if (!primaryLinks || !secondaryLinks) {
+    return { error: "Menü linkleri okunamadı, lütfen tekrar deneyin." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("site_settings")
+    .update({
+      header_primary_links: primaryLinks,
+      header_secondary_links: secondaryLinks,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/tema/header");
+  return {};
+}
+
+export async function updateFooterContent(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const description = String(formData.get("footerDescription") ?? "").trim();
+  const helpLinks = parseNavLinks(String(formData.get("footerHelpLinks") ?? "[]"));
+  const companyLinks = parseNavLinks(String(formData.get("footerCompanyLinks") ?? "[]"));
+
+  if (!description) {
+    return { error: "Footer açıklaması boş bırakılamaz." };
+  }
+
+  if (!helpLinks || !companyLinks) {
+    return { error: "Menü linkleri okunamadı, lütfen tekrar deneyin." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("site_settings")
+    .update({
+      footer_description: description,
+      footer_help_links: helpLinks,
+      footer_company_links: companyLinks,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/tema/footer");
+  return {};
+}
+
 // ============ SİSTEM AYARLARI ============
 
 export async function updateProfileSettings(

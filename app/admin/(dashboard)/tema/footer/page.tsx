@@ -1,5 +1,17 @@
-import ComingSoon from "@/components/admin/ComingSoon";
+import { getSiteSettings } from "@/lib/data/siteSettings";
+import FooterForm from "./FooterForm";
 
-export default function TemaFooterPage() {
-  return <ComingSoon title="Alt Kısım (Footer) Düzeni" note="Tema Düzeni fazında eklenecek." />;
+export default async function TemaFooterPage() {
+  const settings = await getSiteSettings();
+
+  return (
+    <div>
+      <h1 className="font-display mb-8 text-[28px]">Alt Kısım (Footer) Düzeni</h1>
+      <FooterForm
+        description={settings.footerDescription}
+        helpLinks={settings.footerHelpLinks}
+        companyLinks={settings.footerCompanyLinks}
+      />
+    </div>
+  );
 }

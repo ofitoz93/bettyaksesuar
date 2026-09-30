@@ -3,19 +3,6 @@ import Link from "next/link";
 import { getCategories, getRootCategories } from "@/lib/data/categories";
 import { getSiteSettings } from "@/lib/data/siteSettings";
 
-const helpLinks: { label: string; href: string }[] = [
-  { label: "Sıkça Sorulan Sorular", href: "/sss" },
-  { label: "Kargo & Teslimat", href: "/kargo-teslimat" },
-  { label: "Garanti & Bakım", href: "/garanti-bakim" },
-  { label: "İade & Değişim", href: "/iade-degisim" },
-  { label: "Mesafeli Satış Sözleşmesi", href: "/mesafeli-satis-sozlesmesi" },
-];
-
-const companyLinks: { label: string; href: string }[] = [
-  { label: "Hakkımızda", href: "/hakkimizda" },
-  { label: "İletişim", href: "/iletisim" },
-];
-
 const shoppingLinks: { label: string; href: string }[] = [
   { label: "Yeni Gelenler", href: "/yeni-gelenler" },
   { label: "İndirimli Ürünler", href: "/indirimli-urunler" },
@@ -54,8 +41,7 @@ export default async function Footer() {
               </div>
             )}
             <p className="max-w-[260px] text-[13px] leading-relaxed text-ink-soft">
-              Su geçirmez, kararmaz çelik takılar. Günlük kullanım için
-              tasarlandı, ömür boyu yanınızda.
+              {settings.footerDescription}
             </p>
             {socialLinks.length > 0 && (
               <div className="mt-[22px] flex gap-3.5">
@@ -77,8 +63,8 @@ export default async function Footer() {
 
           <FooterColumn title="Alışveriş" links={shoppingLinks} />
           <FooterColumn title="Koleksiyonlar" links={collectionLinks} />
-          <FooterColumn title="Yardım" links={helpLinks} />
-          <FooterColumn title="Kurumsal" links={companyLinks} />
+          <FooterColumn title="Yardım" links={settings.footerHelpLinks} />
+          <FooterColumn title="Kurumsal" links={settings.footerCompanyLinks} />
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3.5 border-t border-line pt-6">

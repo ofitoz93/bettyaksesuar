@@ -5,19 +5,6 @@ import SearchBox from "./SearchBox";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteSettings } from "@/lib/data/siteSettings";
 
-const primaryNav: { label: string; href: string }[] = [
-  { label: "KOLYE", href: "/magaza?kategori=kolye" },
-  { label: "KÜPE", href: "/magaza?kategori=kupe" },
-  { label: "BİLEKLİK", href: "/magaza?kategori=bileklik" },
-  { label: "YÜZÜK", href: "/magaza?kategori=yuzuk" },
-];
-
-const secondaryNav: { label: string; href: string }[] = [
-  { label: "YENİ GELENLER", href: "/yeni-gelenler" },
-  { label: "İNDİRİM", href: "/indirimli-urunler" },
-  { label: "TÜM ÜRÜNLER", href: "/magaza" },
-];
-
 interface HeaderProps {
   variant?: "transparent" | "solid";
 }
@@ -45,7 +32,7 @@ export default async function Header({ variant = "transparent" }: HeaderProps) {
         <div className="hidden items-center gap-7 md:flex">
           <SearchBox solid={isSolid} />
           <nav className="flex items-center gap-6">
-            {primaryNav.map((item) => (
+            {settings.headerPrimaryLinks.map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
@@ -91,7 +78,7 @@ export default async function Header({ variant = "transparent" }: HeaderProps) {
 
         <div className="flex items-center gap-5">
           <nav className="hidden items-center gap-6 md:flex">
-            {secondaryNav.map((item) => (
+            {settings.headerSecondaryLinks.map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
