@@ -49,6 +49,12 @@ function readProductFields(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim();
   const isNew = formData.get("isNew") === "on";
   const isBestSeller = formData.get("isBestSeller") === "on";
+  const isActive = formData.get("isActive") === "on";
+  const metaTitle = String(formData.get("metaTitle") ?? "").trim();
+  const metaDescription = String(formData.get("metaDescription") ?? "").trim();
+  const metaKeywords = String(formData.get("metaKeywords") ?? "").trim();
+  const taxClassPercentRaw = String(formData.get("taxClassPercent") ?? "20").trim();
+  const taxClassPercent = taxClassPercentRaw ? Number(taxClassPercentRaw) : 20;
 
   // İndirim yüzdesi elle girilmiyor — fiyat ile eski fiyattan otomatik hesaplanır,
   // böylece ikisi asla birbiriyle tutarsız olamaz.
@@ -70,6 +76,11 @@ function readProductFields(formData: FormData) {
     description: description || null,
     isNew,
     isBestSeller,
+    isActive,
+    metaTitle: metaTitle || null,
+    metaDescription: metaDescription || null,
+    metaKeywords: metaKeywords || null,
+    taxClassPercent: Number.isFinite(taxClassPercent) ? taxClassPercent : 20,
   };
 }
 
@@ -135,6 +146,47 @@ async function uploadSingleImage(
   return publicUrl;
 }
 
+async function uploadMainAndGalleryImages(formData: FormData, slug: string): Promise<string[]> {
+  const mainUrl = await uploadSingleImage(formData, "mainImage", `${slug}-main`);
+  const galleryFiles = formData
+    .getAll("galleryImages")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  const galleryUrls = await uploadImageFiles(galleryFiles, slug);
+
+  return [mainUrl, ...galleryUrls].filter((url): url is string => Boolean(url));
+}
+
+export async function setMainProductImage(productId: string, imageId: string) {
+  const supabase = await createClient();
+
+  const { data: currentMain } = await supabase
+    .from("product_images")
+    .select("id, position")
+    .eq("product_id", productId)
+    .order("position", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!currentMain || currentMain.id === imageId) {
+    return;
+  }
+
+  const { data: target } = await supabase
+    .from("product_images")
+    .select("position")
+    .eq("id", imageId)
+    .maybeSingle();
+
+  if (!target) return;
+
+  await supabase.from("product_images").update({ position: currentMain.position }).eq("id", imageId);
+  await supabase.from("product_images").update({ position: target.position }).eq("id", currentMain.id);
+
+  revalidatePath(`/admin/urun/${productId}`);
+  revalidatePath("/admin/urunler");
+  revalidatePath("/magaza");
+}
+
 export async function createProduct(
   _prevState: ActionState,
   formData: FormData,
@@ -161,6 +213,11 @@ export async function createProduct(
       description: fields.description,
       is_new: fields.isNew,
       is_best_seller: fields.isBestSeller,
+      is_active: fields.isActive,
+      meta_title: fields.metaTitle,
+      meta_description: fields.metaDescription,
+      meta_keywords: fields.metaKeywords,
+      tax_class_percent: fields.taxClassPercent,
     })
     .select("id")
     .single();
@@ -169,7 +226,7 @@ export async function createProduct(
     return { error: `Ürün eklenemedi: ${error?.message ?? "bilinmeyen hata"}` };
   }
 
-  const imageUrls = await uploadImages(formData, fields.slug);
+  const imageUrls = await uploadMainAndGalleryImages(formData, fields.slug);
   if (imageUrls.length > 0) {
     await supabase.from("product_images").insert(
       imageUrls.map((url, index) => ({
@@ -322,6 +379,11 @@ export async function updateProduct(
       description: fields.description,
       is_new: fields.isNew,
       is_best_seller: fields.isBestSeller,
+      is_active: fields.isActive,
+      meta_title: fields.metaTitle,
+      meta_description: fields.metaDescription,
+      meta_keywords: fields.metaKeywords,
+      tax_class_percent: fields.taxClassPercent,
     })
     .eq("id", id);
 
@@ -363,6 +425,52 @@ export async function updateProduct(
   revalidatePath("/magaza");
   revalidatePath("/");
   redirect("/admin/urunler");
+}
+
+export async function duplicateProduct(id: string) {
+  const supabase = await createClient();
+
+  const { data: original, error: fetchError } = await supabase
+    .from("products")
+    .select("*, product_images(url, position)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError || !original) {
+    return;
+  }
+
+  const newSlug = `${original.slug}-kopya-${Date.now().toString(36)}`;
+
+  const { product_images: originalImages, ...rest } = original;
+  delete rest.id;
+  delete rest.created_at;
+  delete rest.updated_at;
+
+  const { data: copy, error: insertError } = await supabase
+    .from("products")
+    .insert({
+      ...rest,
+      slug: newSlug,
+      name: `${original.name} (Kopya)`,
+      is_active: false,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !copy) {
+    return;
+  }
+
+  const images = (originalImages ?? []) as { url: string; position: number }[];
+  if (images.length > 0) {
+    await supabase.from("product_images").insert(
+      images.map((img) => ({ product_id: copy.id, url: img.url, position: img.position })),
+    );
+  }
+
+  revalidatePath("/admin/urunler");
+  redirect(`/admin/urun/${copy.id}`);
 }
 
 export async function deleteProduct(id: string) {
@@ -519,39 +627,121 @@ export async function updateSocialFeedEnabled(enabled: boolean) {
   revalidatePath("/admin/ayarlar/sosyal-medya");
 }
 
-export async function updateCategoryImage(
-  category: string,
-  _prevState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const imageUrl = await uploadSingleImage(formData, "image", `category-${category}`);
+export interface CategoryActionState {
+  error?: string;
+}
 
-  if (!imageUrl) {
-    return { error: "Lütfen bir görsel seçin." };
+export async function createCategory(
+  _prevState: CategoryActionState,
+  formData: FormData,
+): Promise<CategoryActionState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const rawSlug = String(formData.get("slug") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const metaTitle = String(formData.get("metaTitle") ?? "").trim();
+  const metaDescription = String(formData.get("metaDescription") ?? "").trim();
+  const metaKeywords = String(formData.get("metaKeywords") ?? "").trim();
+  const parentSlug = String(formData.get("parentSlug") ?? "").trim();
+
+  if (!name) {
+    return { error: "Kategori adı zorunlu." };
   }
+
+  const slug = slugify(rawSlug || name);
+  if (!slug) {
+    return { error: "Geçerli bir SEO bağlantısı oluşturulamadı." };
+  }
+
+  const imageUrl = await uploadSingleImage(formData, "image", `category-${slug}`);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("categories").insert({
+    slug,
+    name,
+    description,
+    parent_slug: parentSlug || null,
+    meta_title: metaTitle || null,
+    meta_description: metaDescription || null,
+    meta_keywords: metaKeywords || null,
+    image_url: imageUrl,
+  });
+
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Bu SEO bağlantısı zaten kullanılıyor, lütfen farklı bir tane girin."
+          : `Kaydedilemedi: ${error.message}`,
+    };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/ayarlar/kategoriler");
+  redirect("/admin/ayarlar/kategoriler");
+}
+
+export async function updateCategory(
+  slug: string,
+  _prevState: CategoryActionState,
+  formData: FormData,
+): Promise<CategoryActionState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const metaTitle = String(formData.get("metaTitle") ?? "").trim();
+  const metaDescription = String(formData.get("metaDescription") ?? "").trim();
+  const metaKeywords = String(formData.get("metaKeywords") ?? "").trim();
+  const parentSlug = String(formData.get("parentSlug") ?? "").trim();
+
+  if (!name) {
+    return { error: "Kategori adı zorunlu." };
+  }
+
+  if (parentSlug === slug) {
+    return { error: "Bir kategori kendi alt kategorisi olamaz." };
+  }
+
+  const imageUrl = await uploadSingleImage(formData, "image", `category-${slug}`);
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("category_images")
-    .upsert({ category, image_url: imageUrl, updated_at: new Date().toISOString() });
+    .from("categories")
+    .update({
+      name,
+      description,
+      parent_slug: parentSlug || null,
+      meta_title: metaTitle || null,
+      meta_description: metaDescription || null,
+      meta_keywords: metaKeywords || null,
+      updated_at: new Date().toISOString(),
+      ...(imageUrl ? { image_url: imageUrl } : {}),
+    })
+    .eq("slug", slug);
 
   if (error) {
     return { error: `Kaydedilemedi: ${error.message}` };
   }
 
-  revalidatePath("/");
-  revalidatePath("/magaza");
+  revalidatePath("/", "layout");
   revalidatePath("/admin/ayarlar/kategoriler");
-  return {};
+  redirect("/admin/ayarlar/kategoriler");
 }
 
-export async function removeCategoryImage(category: string) {
+export async function deleteCategory(slug: string): Promise<{ error?: string }> {
   const supabase = await createClient();
-  await supabase.from("category_images").delete().eq("category", category);
+  const { error } = await supabase.from("categories").delete().eq("slug", slug);
 
-  revalidatePath("/");
-  revalidatePath("/magaza");
+  if (error) {
+    return {
+      error:
+        error.code === "23503"
+          ? "Bu kategoriye bağlı ürünler olduğu için silinemiyor. Önce ürünleri başka bir kategoriye taşıyın."
+          : `Silinemedi: ${error.message}`,
+    };
+  }
+
+  revalidatePath("/", "layout");
   revalidatePath("/admin/ayarlar/kategoriler");
+  return {};
 }
 
 function readTestimonialFields(formData: FormData) {

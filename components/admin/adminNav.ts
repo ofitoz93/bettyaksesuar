@@ -64,7 +64,6 @@ export const ADMIN_NAV: AdminNavGroup[] = [
       { label: "Ana Sayfa", href: "/admin/ayarlar/anasayfa" },
       { label: "Üst Kısım (Header)", href: "/admin/tema/header" },
       { label: "Alt Kısım (Footer)", href: "/admin/tema/footer" },
-      { label: "Kategori Görselleri", href: "/admin/ayarlar/kategoriler" },
       { label: "Sosyal Medya", href: "/admin/ayarlar/sosyal-medya" },
     ],
   },

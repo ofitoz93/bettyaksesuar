@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import CategoryIcon, { categoryLabels, PRODUCT_CATEGORIES } from "@/components/ui/CategoryIcon";
-import { getCategoryImages } from "@/lib/data/categoryImages";
+import CategoryIcon from "@/components/ui/CategoryIcon";
+import { getCategories, getRootCategories } from "@/lib/data/categories";
 
 const SPARKLES = [
   { top: "10%", left: "22%", size: 8, delay: "0s", duration: "1.3s" },
@@ -19,7 +19,7 @@ const SPARKLES = [
 ];
 
 export default async function CategoryGrid() {
-  const categoryImages = await getCategoryImages();
+  const categories = getRootCategories(await getCategories());
 
   return (
     <section className="px-8 pt-24 pb-6">
@@ -33,26 +33,25 @@ export default async function CategoryGrid() {
           </h2>
         </div>
         <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-5">
-          {PRODUCT_CATEGORIES.map((category) => {
-            const image = categoryImages[category];
+          {categories.map((category) => {
             return (
               <Link
-                key={category}
-                href={`/magaza?kategori=${category}`}
+                key={category.slug}
+                href={`/magaza?kategori=${category.slug}`}
                 className="group block text-center"
               >
                 <div className="relative mb-4 flex aspect-square items-center justify-center overflow-hidden rounded-full border border-line bg-ivory-deep">
-                  {image ? (
+                  {category.imageUrl ? (
                     <Image
-                      src={image}
-                      alt={categoryLabels[category]}
+                      src={category.imageUrl}
+                      alt={category.name}
                       width={140}
                       height={140}
                       quality={90}
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <CategoryIcon category={category} size={46} className="text-ink" />
+                    <CategoryIcon category={category.slug} size={46} className="text-ink" />
                   )}
                   <span aria-hidden className="sparkle-field pointer-events-none absolute inset-0">
                     {SPARKLES.map((sparkle, i) => (
@@ -71,7 +70,7 @@ export default async function CategoryGrid() {
                   </span>
                 </div>
                 <span className="text-[13.5px] tracking-wide group-hover:text-gold-deep">
-                  {categoryLabels[category]}
+                  {category.name}
                 </span>
               </Link>
             );

@@ -1,14 +1,6 @@
-export type ProductCategory =
-  | "kolye"
-  | "boncuk-kolye"
-  | "kupe"
-  | "bileklik"
-  | "kelepce"
-  | "yuzuk"
-  | "set"
-  | "saat"
-  | "sahmeran"
-  | "halhal";
+// Kategoriler artık "categories" tablosunda admin tarafından yönetiliyor
+// (bkz. lib/data/categories.ts) — sabit bir union yerine serbest metin (slug).
+export type ProductCategory = string;
 
 export interface Product {
   id: string;
@@ -25,6 +17,11 @@ export interface Product {
   stock?: number;
   costPrice?: number | null;
   sku?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  metaKeywords?: string | null;
+  taxClassPercent?: number;
+  isActive?: boolean;
 }
 
 export interface Testimonial {

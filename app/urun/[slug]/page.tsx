@@ -4,12 +4,27 @@ import Footer from "@/components/layout/Footer";
 import ProductGallery from "@/components/product/ProductGallery";
 import AddToCartButton from "@/components/product/AddToCartButton";
 import StockNotifyForm from "@/components/product/StockNotifyForm";
-import { categoryLabels } from "@/components/ui/CategoryIcon";
+import { getCategoryBySlug } from "@/lib/data/categories";
 import { getProductBySlug } from "@/lib/data/products";
 import { getCurrentProfile } from "@/lib/data/profile";
 
 interface UrunPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: UrunPageProps) {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+
+  if (!product) {
+    return { title: "Ürün Bulunamadı" };
+  }
+
+  return {
+    title: product.metaTitle || `${product.name} | Betty Aksesuar`,
+    description: product.metaDescription || product.description || undefined,
+    keywords: product.metaKeywords || undefined,
+  };
 }
 
 export default async function UrunPage({ params }: UrunPageProps) {
@@ -23,6 +38,8 @@ export default async function UrunPage({ params }: UrunPageProps) {
     notFound();
   }
 
+  const category = await getCategoryBySlug(product.category);
+
   const inStock = (product.stock ?? 0) > 0;
 
   return (
@@ -34,7 +51,7 @@ export default async function UrunPage({ params }: UrunPageProps) {
 
           <div>
             <div className="text-[11px] font-medium tracking-[0.22em] text-gold-deep uppercase">
-              {categoryLabels[product.category]}
+              {category?.name ?? product.category}
             </div>
             <h1 className="font-display mt-2.5 text-[34px]">{product.name}</h1>
 

@@ -1,11 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getProducts } from "@/lib/data/products";
-import { categoryLabels } from "@/components/ui/CategoryIcon";
+import { getCategories, categoryLabelMap } from "@/lib/data/categories";
 import DeleteProductButton from "./DeleteProductButton";
+import DuplicateProductButton from "./DuplicateProductButton";
 
 export default async function AdminDashboardPage() {
-  const products = await getProducts();
+  const [products, categories] = await Promise.all([
+    getProducts(undefined, undefined, { includeInactive: true }),
+    getCategories(),
+  ]);
+  const labels = categoryLabelMap(categories);
 
   return (
     <div>
@@ -64,7 +69,7 @@ export default async function AdminDashboardPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-ink-soft">
-                    {categoryLabels[product.category]}
+                    {labels[product.category] ?? product.category}
                   </td>
                   <td className="px-4 py-3">₺{product.price}</td>
                   <td className="px-4 py-3">
@@ -79,7 +84,16 @@ export default async function AdminDashboardPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
+                      <span
+                        className={`px-2 py-0.5 text-[10px] ${
+                          product.isActive
+                            ? "bg-status-green-bg text-status-green-fg"
+                            : "bg-status-red-bg text-status-red-fg"
+                        }`}
+                      >
+                        {product.isActive ? "Aktif" : "Pasif"}
+                      </span>
                       {product.isNew && (
                         <span className="bg-status-blue-bg px-2 py-0.5 text-[10px] text-status-blue-fg">
                           Yeni
@@ -100,6 +114,7 @@ export default async function AdminDashboardPage() {
                       >
                         Düzenle
                       </Link>
+                      <DuplicateProductButton id={product.id} />
                       <DeleteProductButton id={product.id} name={product.name} />
                     </div>
                   </td>

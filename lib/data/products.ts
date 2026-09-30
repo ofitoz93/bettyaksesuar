@@ -15,6 +15,11 @@ interface ProductRow {
   stock: number;
   cost_price: number | null;
   sku: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  meta_keywords: string | null;
+  tax_class_percent: number;
+  is_active: boolean;
   product_images: { url: string; position: number }[] | null;
 }
 
@@ -41,12 +46,18 @@ function mapRow(row: ProductRow): Product {
     stock: row.stock,
     costPrice: row.cost_price,
     sku: row.sku,
+    metaTitle: row.meta_title,
+    metaDescription: row.meta_description,
+    metaKeywords: row.meta_keywords,
+    taxClassPercent: Number(row.tax_class_percent),
+    isActive: row.is_active,
   };
 }
 
 export async function getProducts(
   category?: ProductCategory,
   search?: string,
+  options?: { includeInactive?: boolean },
 ): Promise<Product[]> {
   const supabase = await createClient();
   let query = supabase
@@ -54,6 +65,10 @@ export async function getProducts(
     .select(PRODUCT_SELECT)
     .order("created_at", { ascending: false })
     .order("position", { foreignTable: "product_images", ascending: true });
+
+  if (!options?.includeInactive) {
+    query = query.eq("is_active", true);
+  }
 
   if (category) {
     query = query.eq("category", category);
@@ -77,6 +92,7 @@ export async function getBestSellers(limit = 4): Promise<Product[]> {
     .from("products")
     .select(PRODUCT_SELECT)
     .eq("is_best_seller", true)
+    .eq("is_active", true)
     .order("created_at", { ascending: false })
     .order("position", { foreignTable: "product_images", ascending: true })
     .limit(limit);
@@ -93,6 +109,7 @@ export async function getNewArrivals(limit = 20): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)
+    .eq("is_active", true)
     .order("created_at", { ascending: false })
     .order("position", { foreignTable: "product_images", ascending: true })
     .limit(limit);
@@ -109,6 +126,7 @@ export async function getDiscountedProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)
+    .eq("is_active", true)
     .or("discount_percent.gt.0,compare_at_price.not.is.null")
     .order("created_at", { ascending: false })
     .order("position", { foreignTable: "product_images", ascending: true });
@@ -127,6 +145,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     .select(PRODUCT_SELECT)
     .order("position", { foreignTable: "product_images", ascending: true })
     .eq("slug", slug)
+    .eq("is_active", true)
     .maybeSingle();
 
   if (error || !data) {

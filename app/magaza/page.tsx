@@ -2,9 +2,8 @@ import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/ui/ProductCard";
-import { categoryLabels, PRODUCT_CATEGORIES } from "@/components/ui/CategoryIcon";
+import { getCategories, categoryLabelMap } from "@/lib/data/categories";
 import { getProducts } from "@/lib/data/products";
-import type { ProductCategory } from "@/lib/types";
 
 export const metadata = {
   title: "Mağaza | Betty Aksesuar",
@@ -16,9 +15,9 @@ interface MagazaPageProps {
 
 export default async function MagazaPage({ searchParams }: MagazaPageProps) {
   const { kategori, ara } = await searchParams;
-  const activeCategory = PRODUCT_CATEGORIES.includes(kategori as ProductCategory)
-    ? (kategori as ProductCategory)
-    : undefined;
+  const categories = await getCategories();
+  const labels = categoryLabelMap(categories);
+  const activeCategory = categories.some((c) => c.slug === kategori) ? kategori : undefined;
   const search = ara?.trim() || undefined;
 
   const products = await getProducts(activeCategory, search);
@@ -36,7 +35,7 @@ export default async function MagazaPage({ searchParams }: MagazaPageProps) {
               {search
                 ? `"${search}" için sonuçlar`
                 : activeCategory
-                  ? categoryLabels[activeCategory]
+                  ? labels[activeCategory]
                   : "Tüm Ürünler"}
             </h1>
           </div>
@@ -52,17 +51,17 @@ export default async function MagazaPage({ searchParams }: MagazaPageProps) {
             >
               Tümü
             </Link>
-            {PRODUCT_CATEGORIES.map((category) => (
+            {categories.map((category) => (
               <Link
-                key={category}
-                href={`/magaza?kategori=${category}`}
+                key={category.slug}
+                href={`/magaza?kategori=${category.slug}`}
                 className={`border px-5 py-2.5 text-xs tracking-[0.1em] uppercase ${
-                  activeCategory === category
+                  activeCategory === category.slug
                     ? "border-ink bg-ink text-ivory"
                     : "border-line text-ink-soft hover:border-ink"
                 }`}
               >
-                {categoryLabels[category]}
+                {category.name}
               </Link>
             ))}
           </div>

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getProductById, getProductImages } from "@/lib/data/products";
+import { getCategories } from "@/lib/data/categories";
 import { updateProduct } from "@/app/admin/actions";
 import ProductForm from "../../ProductForm";
 
@@ -9,7 +10,7 @@ interface EditUrunPageProps {
 
 export default async function EditUrunPage({ params }: EditUrunPageProps) {
   const { id } = await params;
-  const product = await getProductById(id);
+  const [product, categories] = await Promise.all([getProductById(id), getCategories()]);
 
   if (!product) {
     notFound();
@@ -24,6 +25,7 @@ export default async function EditUrunPage({ params }: EditUrunPageProps) {
       <ProductForm
         action={updateWithId}
         product={product}
+        categories={categories}
         existingImages={existingImages}
         submitLabel="Değişiklikleri Kaydet"
       />

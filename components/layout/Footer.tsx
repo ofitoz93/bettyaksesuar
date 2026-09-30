@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { categoryLabels, PRODUCT_CATEGORIES } from "@/components/ui/CategoryIcon";
+import { getCategories, getRootCategories } from "@/lib/data/categories";
 import { getSiteSettings } from "@/lib/data/siteSettings";
 
 const helpLinks: { label: string; href: string }[] = [
@@ -16,13 +16,6 @@ const companyLinks: { label: string; href: string }[] = [
   { label: "İletişim", href: "/iletisim" },
 ];
 
-const collectionLinks: { label: string; href: string }[] = PRODUCT_CATEGORIES.map(
-  (category) => ({
-    label: categoryLabels[category],
-    href: `/magaza?kategori=${category}`,
-  }),
-);
-
 const shoppingLinks: { label: string; href: string }[] = [
   { label: "Yeni Gelenler", href: "/yeni-gelenler" },
   { label: "İndirimli Ürünler", href: "/indirimli-urunler" },
@@ -31,7 +24,11 @@ const shoppingLinks: { label: string; href: string }[] = [
 ];
 
 export default async function Footer() {
-  const settings = await getSiteSettings();
+  const [settings, categories] = await Promise.all([getSiteSettings(), getCategories()]);
+  const collectionLinks = getRootCategories(categories).map((category) => ({
+    label: category.name,
+    href: `/magaza?kategori=${category.slug}`,
+  }));
   const socialLinks = [
     { key: "instagram", href: settings.instagramUrl, label: "Instagram" },
     { key: "facebook", href: settings.facebookUrl, label: "Facebook" },

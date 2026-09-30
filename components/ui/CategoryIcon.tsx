@@ -1,7 +1,5 @@
-import type { ProductCategory } from "@/lib/types";
-
 interface CategoryIconProps {
-  category: ProductCategory;
+  category: string;
   size?: number;
   className?: string;
 }
@@ -107,21 +105,11 @@ export default function CategoryIcon({
         </svg>
       );
     default:
-      return null;
+      return (
+        <svg {...common}>
+          <path d="M12 3 5 9.5 12 21l7-11.5L12 3Z" />
+          <path d="M5 9.5h14" />
+        </svg>
+      );
   }
 }
-
-export const categoryLabels: Record<ProductCategory, string> = {
-  kolye: "Kolyeler",
-  "boncuk-kolye": "Boncuk Kolyeler",
-  kupe: "Küpeler",
-  bileklik: "Bileklikler",
-  kelepce: "Kelepçeler",
-  yuzuk: "Yüzükler",
-  set: "Setler",
-  saat: "Saatler",
-  sahmeran: "Şahmeranlar",
-  halhal: "Halhallar",
-};
-
-export const PRODUCT_CATEGORIES = Object.keys(categoryLabels) as ProductCategory[];

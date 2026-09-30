@@ -3,7 +3,7 @@ import Link from "next/link";
 const tabs = [
   { label: "Kargo", href: "/admin/ayarlar" },
   { label: "Ana Sayfa İçeriği", href: "/admin/ayarlar/anasayfa" },
-  { label: "Kategori Görselleri", href: "/admin/ayarlar/kategoriler" },
+  { label: "Kategoriler", href: "/admin/ayarlar/kategoriler" },
   { label: "Sosyal Medya Görselleri", href: "/admin/ayarlar/sosyal-medya" },
   { label: "Sayfalar", href: "/admin/ayarlar/sayfalar" },
   { label: "Kampanya Popup'ı", href: "/admin/ayarlar/kampanya" },
