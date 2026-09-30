@@ -8,6 +8,7 @@ import Testimonials from "@/components/sections/Testimonials";
 import InstagramStrip from "@/components/sections/InstagramStrip";
 import Newsletter from "@/components/sections/Newsletter";
 import Footer from "@/components/layout/Footer";
+import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { getSiteSettings } from "@/lib/data/siteSettings";
 
 export default async function Home() {
@@ -28,6 +29,7 @@ export default async function Home() {
       <InstagramStrip />
       <Newsletter />
       <Footer />
+      <WhatsAppButton />
     </>
   );
 }

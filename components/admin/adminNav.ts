@@ -43,7 +43,6 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     links: [
       { label: "Kampanya Popup'ı", href: "/admin/ayarlar/kampanya" },
       { label: "Hediye Çeki", href: "/admin/sistem/hediye-ceki" },
-      { label: "WhatsApp Sipariş", href: "/admin/pazarlama/whatsapp" },
     ],
   },
   {
@@ -55,7 +54,10 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   },
   {
     label: "Eklentiler",
-    links: [{ label: "Ödeme Yöntemleri", href: "/admin/eklentiler" }],
+    links: [
+      { label: "Ödeme Yöntemleri", href: "/admin/eklentiler" },
+      { label: "WhatsApp Sipariş", href: "/admin/eklentiler/whatsapp" },
+    ],
   },
   { label: "Raporlar", href: "/admin/raporlar", links: [] },
   {

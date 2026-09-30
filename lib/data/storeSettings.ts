@@ -26,6 +26,10 @@ export interface StoreSettings {
   maintenanceMode: boolean;
   seoUrlEnabled: boolean;
   sslEnabled: boolean;
+  whatsappEnabled: boolean;
+  whatsappPhone: string | null;
+  whatsappDefaultMessage: string;
+  whatsappProductMessage: string;
 }
 
 const DEFAULT_STORE_SETTINGS: StoreSettings = {
@@ -53,6 +57,10 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   maintenanceMode: false,
   seoUrlEnabled: true,
   sslEnabled: true,
+  whatsappEnabled: false,
+  whatsappPhone: null,
+  whatsappDefaultMessage: "Merhaba, ürünleriniz hakkında bilgi almak istiyorum.",
+  whatsappProductMessage: "Merhaba, {urun_adi} adlı ürünle ilgileniyorum: {urun_linki}",
 };
 
 export const getStoreSettings = cache(async (): Promise<StoreSettings> => {
@@ -92,5 +100,9 @@ export const getStoreSettings = cache(async (): Promise<StoreSettings> => {
     maintenanceMode: data.maintenance_mode,
     seoUrlEnabled: data.seo_url_enabled,
     sslEnabled: data.ssl_enabled,
+    whatsappEnabled: data.whatsapp_enabled,
+    whatsappPhone: data.whatsapp_phone,
+    whatsappDefaultMessage: data.whatsapp_default_message,
+    whatsappProductMessage: data.whatsapp_product_message,
   };
 });

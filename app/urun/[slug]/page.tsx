@@ -4,6 +4,7 @@ import Footer from "@/components/layout/Footer";
 import ProductGallery from "@/components/product/ProductGallery";
 import AddToCartButton from "@/components/product/AddToCartButton";
 import StockNotifyForm from "@/components/product/StockNotifyForm";
+import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { getCategoryBySlug } from "@/lib/data/categories";
 import { getProductBySlug } from "@/lib/data/products";
 import { getCurrentProfile } from "@/lib/data/profile";
@@ -65,9 +66,10 @@ export default async function UrunPage({ params }: UrunPageProps) {
             </div>
 
             {product.description && (
-              <p className="mt-6 max-w-md text-sm leading-relaxed text-ink-soft">
-                {product.description}
-              </p>
+              <div
+                className="mt-6 max-w-md text-sm leading-relaxed text-ink-soft"
+                dangerouslySetInnerHTML={{ __html: product.description }}
+              />
             )}
 
             {inStock ? (
@@ -93,6 +95,10 @@ export default async function UrunPage({ params }: UrunPageProps) {
         </div>
       </main>
       <Footer />
+      <WhatsAppButton
+        productName={product.name}
+        productUrl={`${(process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "")}/urun/${product.slug}`}
+      />
     </>
   );
 }

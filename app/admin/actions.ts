@@ -1217,6 +1217,41 @@ export async function updateFooterContent(
   return {};
 }
 
+export async function updateWhatsAppSettings(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const enabled = formData.get("whatsappEnabled") === "on";
+  const phone = String(formData.get("whatsappPhone") ?? "").trim();
+  const defaultMessage = String(formData.get("whatsappDefaultMessage") ?? "").trim();
+  const productMessage = String(formData.get("whatsappProductMessage") ?? "").trim();
+
+  if (enabled && !phone) {
+    return { error: "Modülü etkinleştirmek için bir WhatsApp numarası girmelisiniz." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("store_settings")
+    .update({
+      whatsapp_enabled: enabled,
+      whatsapp_phone: phone || null,
+      whatsapp_default_message: defaultMessage || "Merhaba, ürünleriniz hakkında bilgi almak istiyorum.",
+      whatsapp_product_message:
+        productMessage || "Merhaba, {urun_adi} adlı ürünle ilgileniyorum: {urun_linki}",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/eklentiler/whatsapp");
+  return {};
+}
+
 // ============ SİSTEM AYARLARI ============
 
 export async function updateProfileSettings(
