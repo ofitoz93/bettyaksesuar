@@ -27,6 +27,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
       { label: "Dosyalar", href: "/admin/katalog/dosyalar" },
       { label: "Müşteri Yorumları", href: "/admin/yorumlar" },
       { label: "Bilgi Sayfaları", href: "/admin/ayarlar/sayfalar" },
+      { label: "Blog", href: "/admin/blog" },
     ],
   },
   {
@@ -57,6 +58,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     links: [
       { label: "Ödeme Yöntemleri", href: "/admin/eklentiler" },
       { label: "WhatsApp Sipariş", href: "/admin/eklentiler/whatsapp" },
+      { label: "Ürün Veri Akışı (XML)", href: "/admin/eklentiler/veri-akisi" },
     ],
   },
   { label: "Raporlar", href: "/admin/raporlar", links: [] },
@@ -80,6 +82,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
       { label: "E-posta", href: "/admin/sistem/eposta" },
       { label: "Uyarı Mesajları", href: "/admin/sistem/uyarilar" },
       { label: "Sunucu", href: "/admin/sistem/sunucu" },
+      { label: "Performans", href: "/admin/sistem/performans" },
     ],
   },
 ];

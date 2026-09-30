@@ -1137,6 +1137,120 @@ export async function updatePaymentMethod(
   return {};
 }
 
+// ============ BLOG YÖNETİMİ ============
+
+function readBlogFields(formData: FormData) {
+  const title = String(formData.get("title") ?? "").trim();
+  const rawSlug = String(formData.get("slug") ?? "").trim();
+  const excerpt = String(formData.get("excerpt") ?? "").trim();
+  const content = String(formData.get("content") ?? "").trim();
+  const author = String(formData.get("author") ?? "").trim();
+  const metaTitle = String(formData.get("metaTitle") ?? "").trim();
+  const metaDescription = String(formData.get("metaDescription") ?? "").trim();
+  const metaKeywords = String(formData.get("metaKeywords") ?? "").trim();
+  const isPublished = formData.get("isPublished") === "on";
+
+  return {
+    title,
+    slug: slugify(rawSlug || title),
+    excerpt: excerpt || null,
+    content,
+    author: author || null,
+    metaTitle: metaTitle || null,
+    metaDescription: metaDescription || null,
+    metaKeywords: metaKeywords || null,
+    isPublished,
+  };
+}
+
+export async function createBlogPost(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const fields = readBlogFields(formData);
+
+  if (!fields.title || !fields.slug) {
+    return { error: "Başlık zorunlu." };
+  }
+
+  const imageUrl = await uploadSingleImage(formData, "image", `blog-${fields.slug}`);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("blog_posts").insert({
+    title: fields.title,
+    slug: fields.slug,
+    excerpt: fields.excerpt,
+    content: fields.content,
+    author: fields.author,
+    meta_title: fields.metaTitle,
+    meta_description: fields.metaDescription,
+    meta_keywords: fields.metaKeywords,
+    is_published: fields.isPublished,
+    image_url: imageUrl,
+  });
+
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Bu SEO bağlantısı zaten kullanılıyor."
+          : `Kaydedilemedi: ${error.message}`,
+    };
+  }
+
+  revalidatePath("/blog");
+  revalidatePath("/admin/blog");
+  redirect("/admin/blog");
+}
+
+export async function updateBlogPost(
+  id: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const fields = readBlogFields(formData);
+
+  if (!fields.title) {
+    return { error: "Başlık zorunlu." };
+  }
+
+  const imageUrl = await uploadSingleImage(formData, "image", `blog-${fields.slug}`);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("blog_posts")
+    .update({
+      title: fields.title,
+      excerpt: fields.excerpt,
+      content: fields.content,
+      author: fields.author,
+      meta_title: fields.metaTitle,
+      meta_description: fields.metaDescription,
+      meta_keywords: fields.metaKeywords,
+      is_published: fields.isPublished,
+      updated_at: new Date().toISOString(),
+      ...(imageUrl ? { image_url: imageUrl } : {}),
+    })
+    .eq("id", id);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/blog");
+  revalidatePath(`/blog/${fields.slug}`);
+  revalidatePath("/admin/blog");
+  redirect("/admin/blog");
+}
+
+export async function deleteBlogPost(id: string) {
+  const supabase = await createClient();
+  await supabase.from("blog_posts").delete().eq("id", id);
+
+  revalidatePath("/blog");
+  revalidatePath("/admin/blog");
+}
+
 // ============ TEMA DÜZENİ: HEADER / FOOTER ============
 
 function parseNavLinks(raw: string): { label: string; href: string }[] | null {
@@ -1470,6 +1584,12 @@ export async function updateStoreProductListing(
   revalidatePath("/magaza");
   revalidatePath("/admin/sistem/urunler");
   return {};
+}
+
+export async function updateXmlFeedEnabled(enabled: boolean) {
+  const supabase = await createClient();
+  await supabase.from("store_settings").update({ xml_feed_enabled: enabled }).eq("id", 1);
+  revalidatePath("/admin/eklentiler/veri-akisi");
 }
 
 export async function updateGiftCardsEnabled(enabled: boolean) {

@@ -30,6 +30,7 @@ export interface StoreSettings {
   whatsappPhone: string | null;
   whatsappDefaultMessage: string;
   whatsappProductMessage: string;
+  xmlFeedEnabled: boolean;
 }
 
 const DEFAULT_STORE_SETTINGS: StoreSettings = {
@@ -61,6 +62,7 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   whatsappPhone: null,
   whatsappDefaultMessage: "Merhaba, ürünleriniz hakkında bilgi almak istiyorum.",
   whatsappProductMessage: "Merhaba, {urun_adi} adlı ürünle ilgileniyorum: {urun_linki}",
+  xmlFeedEnabled: true,
 };
 
 export const getStoreSettings = cache(async (): Promise<StoreSettings> => {
@@ -104,5 +106,6 @@ export const getStoreSettings = cache(async (): Promise<StoreSettings> => {
     whatsappPhone: data.whatsapp_phone,
     whatsappDefaultMessage: data.whatsapp_default_message,
     whatsappProductMessage: data.whatsapp_product_message,
+    xmlFeedEnabled: data.xml_feed_enabled,
   };
 });
