@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 import { notifyBackInStockCustomers } from "@/lib/data/stockNotifications";
+import { fetchTcmbUsdRate } from "@/lib/tcmb";
 import type { ProductCategory } from "@/lib/types";
 
 export interface ActionState {
@@ -179,10 +180,10 @@ export async function createProduct(
     );
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/urunler");
   revalidatePath("/magaza");
   revalidatePath("/");
-  redirect("/admin");
+  redirect("/admin/urunler");
 }
 
 async function uploadWholesaleImageFiles(files: File[], prefix: string): Promise<string[]> {
@@ -358,17 +359,17 @@ export async function updateProduct(
     );
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/urunler");
   revalidatePath("/magaza");
   revalidatePath("/");
-  redirect("/admin");
+  redirect("/admin/urunler");
 }
 
 export async function deleteProduct(id: string) {
   const supabase = await createClient();
   await supabase.from("products").delete().eq("id", id);
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/urunler");
   revalidatePath("/magaza");
   revalidatePath("/");
 }
@@ -877,4 +878,380 @@ export async function closeStockNotification(id: string) {
 
   revalidatePath("/admin/stok-talepleri");
   revalidatePath("/admin");
+}
+
+// ============ EKLENTİLER: ÖDEME YÖNTEMLERİ ============
+
+export async function updatePaymentMethod(
+  code: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const label = String(formData.get("label") ?? "").trim();
+  const enabled = formData.get("enabled") === "on";
+  const extraDiscountPercent = Number(formData.get("extraDiscountPercent") ?? 0);
+
+  if (!label) {
+    return { error: "Ödeme yöntemi adı zorunlu." };
+  }
+
+  if (!Number.isFinite(extraDiscountPercent) || extraDiscountPercent < 0) {
+    return { error: "İndirim yüzdesi geçerli bir sayı olmalı." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("payment_methods")
+    .update({ label, enabled, extra_discount_percent: extraDiscountPercent })
+    .eq("code", code);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/admin/eklentiler");
+  revalidatePath("/odeme");
+  return {};
+}
+
+// ============ SİSTEM AYARLARI ============
+
+export async function updateProfileSettings(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const username = String(formData.get("username") ?? "").trim();
+  const fullName = String(formData.get("fullName") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+  const newPassword = String(formData.get("newPassword") ?? "").trim();
+
+  if (!fullName || !email) {
+    return { error: "Ad soyad ve e-posta zorunlu." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Oturum bulunamadı." };
+  }
+
+  const authUpdate: { email?: string; password?: string } = {};
+  if (email !== user.email) authUpdate.email = email;
+  if (newPassword) {
+    if (newPassword.length < 6) {
+      return { error: "Yeni parola en az 6 karakter olmalı." };
+    }
+    authUpdate.password = newPassword;
+  }
+
+  if (Object.keys(authUpdate).length > 0) {
+    const { error: authError } = await supabase.auth.updateUser(authUpdate);
+    if (authError) {
+      return { error: `Hesap güncellenemedi: ${authError.message}` };
+    }
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ username: username || null, full_name: fullName, phone: phone || null })
+    .eq("id", user.id);
+
+  if (error) {
+    return { error: `Profil güncellenemedi: ${error.message}` };
+  }
+
+  revalidatePath("/admin", "layout");
+  return {};
+}
+
+export async function updateStoreIdentity(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const storeName = String(formData.get("storeName") ?? "").trim();
+  const storeOwner = String(formData.get("storeOwner") ?? "").trim();
+  const storeAddress = String(formData.get("storeAddress") ?? "").trim();
+  const storeEmail = String(formData.get("storeEmail") ?? "").trim();
+  const storePhone = String(formData.get("storePhone") ?? "").trim();
+
+  if (!storeName) {
+    return { error: "Mağaza adı zorunlu." };
+  }
+
+  const logoUrl = await uploadSingleImage(formData, "logo", "logo");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("store_settings")
+    .update({
+      store_name: storeName,
+      store_owner: storeOwner || null,
+      store_address: storeAddress || null,
+      store_email: storeEmail || null,
+      store_phone: storePhone || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  if (logoUrl) {
+    await supabase.from("site_settings").update({ logo_url: logoUrl }).eq("id", 1);
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/sistem/magaza");
+  return {};
+}
+
+export async function updateStoreMeta(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const metaTitle = String(formData.get("metaTitle") ?? "").trim();
+  const metaDescription = String(formData.get("metaDescription") ?? "").trim();
+  const metaKeywords = String(formData.get("metaKeywords") ?? "").trim();
+
+  if (!metaTitle) {
+    return { error: "Meta başlık zorunlu." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("store_settings")
+    .update({
+      meta_title: metaTitle,
+      meta_description: metaDescription || null,
+      meta_keywords: metaKeywords || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/sistem/genel");
+  return {};
+}
+
+export async function updateStoreLocale(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const localeCountry = String(formData.get("localeCountry") ?? "").trim();
+  const localeRegion = String(formData.get("localeRegion") ?? "").trim();
+  const localeCity = String(formData.get("localeCity") ?? "").trim();
+  const currencyCode = String(formData.get("currencyCode") ?? "").trim();
+  const currencySymbol = String(formData.get("currencySymbol") ?? "").trim();
+
+  if (!localeCountry || !currencyCode || !currencySymbol) {
+    return { error: "Ülke, para birimi kodu ve simgesi zorunlu." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("store_settings")
+    .update({
+      locale_country: localeCountry,
+      locale_region: localeRegion || null,
+      locale_city: localeCity || null,
+      currency_code: currencyCode.toUpperCase(),
+      currency_symbol: currencySymbol,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/sistem/yerel");
+  return {};
+}
+
+export async function refreshExchangeRate(): Promise<ActionState> {
+  const rate = await fetchTcmbUsdRate();
+
+  if (!rate) {
+    return { error: "TCMB kur bilgisi şu anda alınamadı, lütfen daha sonra tekrar deneyin." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("store_settings")
+    .update({ currency_exchange_rate: rate, currency_updated_at: new Date().toISOString() })
+    .eq("id", 1);
+
+  if (error) {
+    return { error: `Kur güncellenemedi: ${error.message}` };
+  }
+
+  revalidatePath("/admin/sistem/yerel");
+  return {};
+}
+
+export async function updateStoreProductListing(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const productsPerPage = Number(formData.get("productsPerPage"));
+  const showCategoryProductCount = formData.get("showCategoryProductCount") === "on";
+  const allowReviews = formData.get("allowReviews") === "on";
+  const allowGuestReviews = formData.get("allowGuestReviews") === "on";
+
+  if (!Number.isFinite(productsPerPage) || productsPerPage < 1) {
+    return { error: "Sayfa başına ürün sayısı geçerli bir sayı olmalı." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("store_settings")
+    .update({
+      products_per_page: productsPerPage,
+      show_category_product_count: showCategoryProductCount,
+      allow_reviews: allowReviews,
+      allow_guest_reviews: allowGuestReviews,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/magaza");
+  revalidatePath("/admin/sistem/urunler");
+  return {};
+}
+
+export async function updateGiftCardsEnabled(enabled: boolean) {
+  const supabase = await createClient();
+  await supabase.from("store_settings").update({ gift_cards_enabled: enabled }).eq("id", 1);
+  revalidatePath("/admin/sistem/hediye-ceki");
+}
+
+export async function uploadFavicon(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const faviconUrl = await uploadSingleImage(formData, "favicon", "favicon");
+
+  if (!faviconUrl) {
+    return { error: "Lütfen bir görsel seçin." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("store_settings")
+    .update({ favicon_url: faviconUrl, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/sistem/resimler");
+  return {};
+}
+
+export async function updateEmailSettings(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const smtpHost = String(formData.get("smtpHost") ?? "").trim();
+  const smtpUsername = String(formData.get("smtpUsername") ?? "").trim();
+  const smtpPasswordRaw = String(formData.get("smtpPassword") ?? "");
+  const smtpPortRaw = String(formData.get("smtpPort") ?? "").trim();
+  const smtpTimeoutRaw = String(formData.get("smtpTimeout") ?? "30").trim();
+
+  const supabase = await createClient();
+
+  const update: Record<string, unknown> = {
+    smtp_host: smtpHost || null,
+    smtp_username: smtpUsername || null,
+    smtp_port: smtpPortRaw ? Number(smtpPortRaw) : null,
+    smtp_timeout: smtpTimeoutRaw ? Number(smtpTimeoutRaw) : 30,
+    updated_at: new Date().toISOString(),
+  };
+  // Şifre alanı boş bırakılırsa mevcut kayıtlı şifre korunur (ekranda tekrar gösterilmez).
+  if (smtpPasswordRaw) {
+    update.smtp_password = smtpPasswordRaw;
+  }
+
+  const { error } = await supabase.from("notification_settings").update(update).eq("id", 1);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/admin/sistem/eposta");
+  return {};
+}
+
+export async function updateAlertSettings(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const alertNewCustomer = formData.get("alertNewCustomer") === "on";
+  const alertNewOrder = formData.get("alertNewOrder") === "on";
+  const alertNewReview = formData.get("alertNewReview") === "on";
+  const alertExtraEmail = String(formData.get("alertExtraEmail") ?? "").trim();
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("notification_settings")
+    .update({
+      alert_new_customer: alertNewCustomer,
+      alert_new_order: alertNewOrder,
+      alert_new_review: alertNewReview,
+      alert_extra_email: alertExtraEmail || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/admin/sistem/uyarilar");
+  return {};
+}
+
+export async function updateServerSettings(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const maintenanceMode = formData.get("maintenanceMode") === "on";
+  const seoUrlEnabled = formData.get("seoUrlEnabled") === "on";
+  const sslEnabled = formData.get("sslEnabled") === "on";
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("store_settings")
+    .update({
+      maintenance_mode: maintenanceMode,
+      seo_url_enabled: seoUrlEnabled,
+      ssl_enabled: sslEnabled,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+
+  if (error) {
+    return { error: `Kaydedilemedi: ${error.message}` };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/sistem/sunucu");
+  return {};
 }

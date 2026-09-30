@@ -11,6 +11,7 @@ export interface CheckoutState {
     orderNumber: string;
     total: number;
     discountAmount: number;
+    paymentDiscountAmount: number;
     paymentMethod: string;
   };
 }
@@ -99,6 +100,7 @@ export async function createOrder(
       orderNumber: order.order_number,
       total: Number(order.total),
       discountAmount: Number(order.discount_amount ?? 0),
+      paymentDiscountAmount: Number(order.payment_discount_amount ?? 0),
       paymentMethod: order.payment_method,
     },
   };

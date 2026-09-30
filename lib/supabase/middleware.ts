@@ -34,15 +34,31 @@ export async function updateSession(request: NextRequest) {
   const isAdminLoginRoute = pathname === "/admin/login";
   const isAccountRoute = pathname.startsWith("/hesabim");
   const isAccountAuthRoute = pathname === "/hesabim/giris" || pathname === "/hesabim/kayit";
+  const isApiRoute = pathname.startsWith("/api");
+  const isMaintenancePage = pathname === "/bakim";
 
   let isAdmin = false;
-  if (user && isAdminRoute) {
+  if (user) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .maybeSingle();
     isAdmin = profile?.role === "admin";
+  }
+
+  if (!isAdminRoute && !isApiRoute && !isMaintenancePage && !isAdmin) {
+    const { data: storeSettings } = await supabase
+      .from("store_settings")
+      .select("maintenance_mode")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (storeSettings?.maintenance_mode) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/bakim";
+      return NextResponse.redirect(url);
+    }
   }
 
   if (isAdminRoute && !isAdminLoginRoute && !isAdmin) {

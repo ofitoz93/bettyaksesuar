@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { createOrder, type CheckoutState } from "@/app/odeme/actions";
 import { calculateShippingFee, type ShippingSettings } from "@/lib/shipping";
 import type { CurrentProfile } from "@/lib/data/profile";
+import type { PaymentMethod } from "@/lib/data/paymentMethods";
 import PaytrPaymentFrame from "./PaytrPaymentFrame";
 
 const initialState: CheckoutState = {};
@@ -14,15 +15,20 @@ const initialState: CheckoutState = {};
 interface CheckoutFormProps {
   shippingSettings: ShippingSettings;
   profile: CurrentProfile | null;
-  paytrEnabled: boolean;
+  paymentMethods: PaymentMethod[];
 }
 
-export default function CheckoutForm({ shippingSettings, profile, paytrEnabled }: CheckoutFormProps) {
+export default function CheckoutForm({ shippingSettings, profile, paymentMethods }: CheckoutFormProps) {
   const { items, totalPrice, clear, removeItem, updateQuantity } = useCart();
   const [state, formAction, pending] = useActionState(createOrder, initialState);
   const shippingFee = calculateShippingFee(totalPrice, shippingSettings);
   const [cartNotice, setCartNotice] = useState<string | null>(null);
   const [validated, setValidated] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState(paymentMethods[0]?.code ?? "");
+  const activeMethod = paymentMethods.find((m) => m.code === selectedMethod);
+  const paymentDiscount = activeMethod
+    ? Math.round(((totalPrice * activeMethod.extraDiscountPercent) / 100) * 100) / 100
+    : 0;
 
   // Sepetteki ürünleri veritabanıyla karşılaştırıp silinmiş ürünleri kaldırır,
   // stoktan fazla adetleri kırpar — "Ürün bulunamadı" hatasını sipariş
@@ -113,6 +119,11 @@ export default function CheckoutForm({ shippingSettings, profile, paytrEnabled }
             İndirim uygulandı: -₺{state.order.discountAmount}
           </p>
         )}
+        {state.order.paymentDiscountAmount > 0 && (
+          <p className="mb-1 text-sm text-status-green-fg">
+            Ödeme yöntemi indirimi: -₺{state.order.paymentDiscountAmount}
+          </p>
+        )}
         <p className="mb-8 text-sm text-ink-soft">
           Toplam tutar: <span className="text-ink">₺{state.order.total}</span>
         </p>
@@ -201,25 +212,28 @@ export default function CheckoutForm({ shippingSettings, profile, paytrEnabled }
         <div>
           <label className="mb-2 block text-xs tracking-wide text-ink-soft">Ödeme Yöntemi</label>
           <div className="flex flex-col gap-2.5">
-            {paytrEnabled && (
-              <label className="flex items-center gap-2.5 border border-line px-4 py-3 text-sm has-[:checked]:border-ink">
-                <input type="radio" name="paymentMethod" value="kredi_karti" defaultChecked />
-                Kredi / Banka Kartı (Online Ödeme)
+            {paymentMethods.map((method) => (
+              <label
+                key={method.code}
+                className="flex items-center justify-between gap-2.5 border border-line px-4 py-3 text-sm has-[:checked]:border-ink"
+              >
+                <span className="flex items-center gap-2.5">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value={method.code}
+                    checked={selectedMethod === method.code}
+                    onChange={() => setSelectedMethod(method.code)}
+                  />
+                  {method.label}
+                </span>
+                {method.extraDiscountPercent > 0 && (
+                  <span className="text-xs text-status-green-fg">
+                    %{method.extraDiscountPercent} indirim
+                  </span>
+                )}
               </label>
-            )}
-            <label className="flex items-center gap-2.5 border border-line px-4 py-3 text-sm has-[:checked]:border-ink">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="kapida_odeme"
-                defaultChecked={!paytrEnabled}
-              />
-              Kapıda Ödeme
-            </label>
-            <label className="flex items-center gap-2.5 border border-line px-4 py-3 text-sm has-[:checked]:border-ink">
-              <input type="radio" name="paymentMethod" value="havale" />
-              Havale / EFT
-            </label>
+            ))}
           </div>
         </div>
 
@@ -253,11 +267,17 @@ export default function CheckoutForm({ shippingSettings, profile, paytrEnabled }
           </span>
         </label>
 
+        {paymentMethods.length === 0 && (
+          <p className="text-xs text-status-red-fg">
+            Şu anda aktif bir ödeme yöntemi bulunmuyor, lütfen daha sonra tekrar deneyin.
+          </p>
+        )}
+
         {state.error && <p className="text-xs text-status-red-fg">{state.error}</p>}
 
         <button
           type="submit"
-          disabled={pending || !validated}
+          disabled={pending || !validated || paymentMethods.length === 0}
           className="mt-2 bg-ink px-8 py-3.5 text-xs font-medium tracking-[0.14em] text-ivory uppercase transition-colors hover:bg-gold-deep disabled:opacity-50"
         >
           {pending ? "Sipariş Oluşturuluyor..." : "Siparişi Onayla"}
@@ -284,9 +304,15 @@ export default function CheckoutForm({ shippingSettings, profile, paytrEnabled }
           <span className="text-ink-soft">Kargo</span>
           <span>{shippingFee === 0 ? "Ücretsiz" : `₺${shippingFee}`}</span>
         </div>
+        {paymentDiscount > 0 && (
+          <div className="mt-2 flex justify-between text-sm text-status-green-fg">
+            <span>{activeMethod?.label} indirimi (%{activeMethod?.extraDiscountPercent})</span>
+            <span>-₺{paymentDiscount}</span>
+          </div>
+        )}
         <div className="mt-3 flex justify-between border-t border-line pt-3 text-sm">
           <span>Toplam</span>
-          <span>₺{totalPrice + shippingFee}</span>
+          <span>₺{totalPrice + shippingFee - paymentDiscount}</span>
         </div>
       </div>
     </div>

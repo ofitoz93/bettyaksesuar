@@ -1,63 +1,32 @@
 import Link from "next/link";
-import { logout } from "@/app/admin/actions";
 import { getPendingStockNotificationCount } from "@/lib/data/stockNotifications";
+import { getPendingReturnsCount } from "@/lib/data/returns";
+import { getCurrentProfile } from "@/lib/data/profile";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminUserMenu from "@/components/admin/AdminUserMenu";
 
 export default async function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pendingStockRequests = await getPendingStockNotificationCount();
+  const [pendingStock, pendingReturns, profile] = await Promise.all([
+    getPendingStockNotificationCount(),
+    getPendingReturnsCount(),
+    getCurrentProfile(),
+  ]);
+
+  const displayName = profile?.fullName || profile?.email || "Admin";
 
   return (
-    <div className="min-h-screen bg-ivory-deep">
-      <header className="border-b border-line bg-white px-8 py-4">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
+    <div className="flex min-h-screen bg-ivory-deep">
+      <AdminSidebar pendingStock={pendingStock} pendingReturns={pendingReturns} />
+      <div className="flex-1">
+        <header className="flex items-center justify-between border-b border-line bg-white px-8 py-4">
           <Link href="/admin" className="font-display text-lg tracking-[0.2em]">
             BETTY AKSESUAR <span className="text-gold-deep">ADMIN</span>
           </Link>
           <div className="flex items-center gap-6">
-            <Link
-              href="/admin/siparisler"
-              className="text-xs tracking-wide text-ink-soft hover:text-ink"
-            >
-              Siparişler
-            </Link>
-            <Link
-              href="/admin/iadeler"
-              className="text-xs tracking-wide text-ink-soft hover:text-ink"
-            >
-              İadeler
-            </Link>
-            <Link
-              href="/admin/stok-talepleri"
-              className="flex items-center gap-1.5 text-xs tracking-wide text-ink-soft hover:text-ink"
-            >
-              Stok Talepleri
-              {pendingStockRequests > 0 && (
-                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-gold-deep px-1 text-[10px] font-medium text-white">
-                  {pendingStockRequests}
-                </span>
-              )}
-            </Link>
-            <Link
-              href="/admin/toptanci"
-              className="text-xs tracking-wide text-ink-soft hover:text-ink"
-            >
-              Toptancı Havuzu
-            </Link>
-            <Link
-              href="/admin/yorumlar"
-              className="text-xs tracking-wide text-ink-soft hover:text-ink"
-            >
-              Yorumlar
-            </Link>
-            <Link
-              href="/admin/ayarlar"
-              className="text-xs tracking-wide text-ink-soft hover:text-ink"
-            >
-              Ayarlar
-            </Link>
             <Link
               href="/"
               target="_blank"
@@ -65,18 +34,11 @@ export default async function AdminDashboardLayout({
             >
               Siteyi Görüntüle ↗
             </Link>
-            <form action={logout}>
-              <button
-                type="submit"
-                className="text-xs tracking-wide text-ink-soft hover:text-ink"
-              >
-                Çıkış Yap
-              </button>
-            </form>
+            <AdminUserMenu displayName={displayName} />
           </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-5xl px-8 py-10">{children}</main>
+        </header>
+        <main className="mx-auto max-w-5xl px-8 py-10">{children}</main>
+      </div>
     </div>
   );
 }

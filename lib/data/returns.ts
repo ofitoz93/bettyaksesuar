@@ -1,5 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 
+export async function getPendingReturnsCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("return_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "beklemede");
+  return count ?? 0;
+}
+
 export interface ReturnRequest {
   id: string;
   orderId: string;

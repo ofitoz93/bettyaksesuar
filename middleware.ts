@@ -6,5 +6,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/hesabim/:path*"],
+  // _next varlıkları, favicon ve uzantılı statik dosyalar (görsel/font/css/js vb.)
+  // middleware'den geçmez — her sayfa isteğinde gereksiz DB sorgusu/gecikme olmaz.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

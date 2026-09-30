@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import CheckoutForm from "@/components/checkout/CheckoutForm";
 import { getShippingSettings } from "@/lib/data/shipping";
 import { getCurrentProfile } from "@/lib/data/profile";
+import { getEnabledPaymentMethods } from "@/lib/data/paymentMethods";
 import { isPaytrConfigured } from "@/lib/paytr";
 
 export const metadata = {
@@ -10,10 +11,16 @@ export const metadata = {
 };
 
 export default async function OdemePage() {
-  const [shippingSettings, profile] = await Promise.all([
+  const [shippingSettings, profile, allEnabledMethods] = await Promise.all([
     getShippingSettings(),
     getCurrentProfile(),
+    getEnabledPaymentMethods(),
   ]);
+
+  const paytrConfigured = isPaytrConfigured();
+  const paymentMethods = allEnabledMethods.filter(
+    (method) => method.code !== "kredi_karti" || paytrConfigured,
+  );
 
   return (
     <>
@@ -29,7 +36,7 @@ export default async function OdemePage() {
           <CheckoutForm
             shippingSettings={shippingSettings}
             profile={profile}
-            paytrEnabled={isPaytrConfigured()}
+            paymentMethods={paymentMethods}
           />
         </div>
       </main>
