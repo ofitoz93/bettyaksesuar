@@ -185,55 +185,63 @@ export async function createProduct(
   redirect("/admin");
 }
 
-export interface BulkProductResult {
+async function uploadWholesaleImageFiles(files: File[], prefix: string): Promise<string[]> {
+  const supabase = await createClient();
+  const paths: string[] = [];
+
+  for (const file of files) {
+    const extension = file.name.split(".").pop() ?? "jpg";
+    const path = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+
+    const { error } = await supabase.storage.from("wholesale-images").upload(path, file);
+    if (error) {
+      console.error("uploadWholesaleImageFiles error:", error.message);
+      continue;
+    }
+
+    paths.push(path);
+  }
+
+  return paths;
+}
+
+export interface BulkWholesaleResult {
   name: string;
   error?: string;
 }
 
-export interface BulkActionState {
-  results?: BulkProductResult[];
+export interface BulkWholesaleActionState {
+  results?: BulkWholesaleResult[];
 }
 
-export async function bulkCreateProducts(
-  _prevState: BulkActionState,
+export async function bulkCreateWholesaleProducts(
+  _prevState: BulkWholesaleActionState,
   formData: FormData,
-): Promise<BulkActionState> {
+): Promise<BulkWholesaleActionState> {
   const rowIds = formData.getAll("rowIds").map(String);
   const supabase = await createClient();
-  const results: BulkProductResult[] = [];
+  const results: BulkWholesaleResult[] = [];
 
   for (const id of rowIds) {
     const name = String(formData.get(`name-${id}`) ?? "").trim();
-    const category = String(formData.get(`category-${id}`) ?? "") as ProductCategory;
-    const price = Number(formData.get(`price-${id}`));
-    const stock = Number(formData.get(`stock-${id}`) ?? 0);
-    const costPriceRaw = String(formData.get(`costPrice-${id}`) ?? "").trim();
-    const costPrice = costPriceRaw ? Number(costPriceRaw) : null;
     const sku = String(formData.get(`sku-${id}`) ?? "").trim() || null;
+    const files = formData
+      .getAll(`images-${id}`)
+      .filter((f): f is File => f instanceof File && f.size > 0);
 
-    if (!name && !category && !costPriceRaw) {
+    if (!name && !sku && files.length === 0) {
       // Boş bırakılmış satır — sessizce atla.
       continue;
     }
 
-    if (!name || !category || !Number.isFinite(price)) {
-      results.push({ name: name || "(isimsiz satır)", error: "Ürün adı, kategori ve fiyat zorunlu" });
+    if (!name) {
+      results.push({ name: "(isimsiz satır)", error: "Ürün adı zorunlu" });
       continue;
     }
 
-    const slug = `${slugify(name)}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-
     const { data: product, error } = await supabase
-      .from("products")
-      .insert({
-        slug,
-        name,
-        category,
-        price,
-        stock: Number.isFinite(stock) ? stock : 0,
-        cost_price: costPrice,
-        sku,
-      })
+      .from("wholesale_products")
+      .insert({ name, sku })
       .select("id")
       .single();
 
@@ -242,25 +250,40 @@ export async function bulkCreateProducts(
       continue;
     }
 
-    const files = formData
-      .getAll(`images-${id}`)
-      .filter((f): f is File => f instanceof File && f.size > 0);
-    const imageUrls = await uploadImageFiles(files, slug);
-
-    if (imageUrls.length > 0) {
-      await supabase.from("product_images").insert(
-        imageUrls.map((url, index) => ({ product_id: product.id, url, position: index })),
+    const paths = await uploadWholesaleImageFiles(files, product.id);
+    if (paths.length > 0) {
+      await supabase.from("wholesale_product_images").insert(
+        paths.map((path, index) => ({
+          wholesale_product_id: product.id,
+          path,
+          position: index,
+        })),
       );
     }
 
     results.push({ name });
   }
 
-  revalidatePath("/admin");
-  revalidatePath("/magaza");
-  revalidatePath("/");
+  revalidatePath("/admin/toptanci");
 
   return { results };
+}
+
+export async function deleteWholesaleProduct(id: string) {
+  const supabase = await createClient();
+
+  const { data: images } = await supabase
+    .from("wholesale_product_images")
+    .select("path")
+    .eq("wholesale_product_id", id);
+
+  if (images && images.length > 0) {
+    await supabase.storage.from("wholesale-images").remove(images.map((img) => img.path));
+  }
+
+  await supabase.from("wholesale_products").delete().eq("id", id);
+
+  revalidatePath("/admin/toptanci");
 }
 
 export async function updateProduct(

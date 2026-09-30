@@ -41,6 +41,12 @@ export default async function AdminDashboardLayout({
               )}
             </Link>
             <Link
+              href="/admin/toptanci"
+              className="text-xs tracking-wide text-ink-soft hover:text-ink"
+            >
+              Toptancı Havuzu
+            </Link>
+            <Link
               href="/admin/yorumlar"
               className="text-xs tracking-wide text-ink-soft hover:text-ink"
             >
