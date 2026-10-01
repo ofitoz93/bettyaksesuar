@@ -73,6 +73,7 @@ export default function PromoPopup({
             products={products}
             copied={copied}
             onCodeClick={copyCode}
+            onNavigate={close}
           />
         </div>
       </div>

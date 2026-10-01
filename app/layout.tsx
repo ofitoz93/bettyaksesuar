@@ -13,12 +13,18 @@ import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import { getPromoPopupSettings } from "@/lib/data/promoPopup";
 import { getBestSellers } from "@/lib/data/products";
 import { getSiteSettings } from "@/lib/data/siteSettings";
+import { getStoreSettings } from "@/lib/data/storeSettings";
 
-export const metadata: Metadata = {
-  title: "Betty Aksesuar | Su Geçirmez Çelik Takı",
-  description:
-    "Su geçirmez, kararmaz, 18 ayar altın kaplama çelik takılar. Kolye, küpe, bileklik ve yüzük koleksiyonlarını keşfedin.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const storeSettings = await getStoreSettings();
+
+  return {
+    title: "Betty Aksesuar | Su Geçirmez Çelik Takı",
+    description:
+      "Su geçirmez, kararmaz, 18 ayar altın kaplama çelik takılar. Kolye, küpe, bileklik ve yüzük koleksiyonlarını keşfedin.",
+    icons: storeSettings.faviconUrl ? { icon: storeSettings.faviconUrl } : undefined,
+  };
+}
 
 export default async function RootLayout({
   children,

@@ -17,12 +17,14 @@ export default function PromoPopupCard({
   interactive = true,
   copied = false,
   onCodeClick,
+  onNavigate,
 }: {
   settings: PromoPopupCardSettings;
   products?: Product[];
   interactive?: boolean;
   copied?: boolean;
   onCodeClick?: () => void;
+  onNavigate?: () => void;
 }) {
   return (
     <div className="relative grid w-full max-w-3xl grid-cols-1 overflow-hidden rounded-lg bg-white shadow-xl md:grid-cols-[240px_1fr_240px]">
@@ -55,6 +57,7 @@ export default function PromoPopupCard({
         {interactive ? (
           <Link
             href={`/hesabim/kayit?code=${encodeURIComponent(settings.discountCode)}`}
+            onClick={onNavigate}
             className="mt-3 block bg-ink px-4 py-2.5 text-center text-[11px] font-medium tracking-[0.14em] text-ivory uppercase transition-colors hover:bg-gold-deep"
           >
             Üye Ol, Kodu Kullan
@@ -64,15 +67,25 @@ export default function PromoPopupCard({
             Üye Ol, Kodu Kullan
           </div>
         )}
-        <div className="mt-2.5 text-center text-[11px] text-ink-soft underline">
-          Zaten üye misiniz? Giriş yapın
-        </div>
+        {interactive ? (
+          <Link
+            href="/hesabim/giris"
+            onClick={onNavigate}
+            className="mt-2.5 text-center text-[11px] text-ink-soft underline hover:text-ink"
+          >
+            Zaten üye misiniz? Giriş yapın
+          </Link>
+        ) : (
+          <div className="mt-2.5 text-center text-[11px] text-ink-soft underline">
+            Zaten üye misiniz? Giriş yapın
+          </div>
+        )}
       </div>
 
       {products.length > 0 && (
         <div className="border-t border-line p-5 md:border-t-0">
           <h3 className="font-display mb-3 text-xs">Beğenebileceğiniz Ürünler</h3>
-          <div className="grid grid-cols-3 gap-2.5 md:grid-cols-2">
+          <div className="grid grid-cols-3 gap-2.5 md:grid-cols-2" onClick={onNavigate}>
             {products.slice(0, 4).map((product) => (
               <ProductCard key={product.id} product={product} compact />
             ))}
