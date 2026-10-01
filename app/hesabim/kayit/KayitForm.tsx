@@ -10,6 +10,7 @@ const initialState: AuthState = {};
 export default function KayitForm() {
   const searchParams = useSearchParams();
   const prefillEmail = searchParams.get("email") ?? "";
+  const discountCode = searchParams.get("code");
   const [state, formAction, pending] = useActionState(customerRegister, initialState);
 
   if (state.info) {
@@ -30,6 +31,13 @@ export default function KayitForm() {
         </div>
         <h1 className="font-display mt-2.5 text-[28px]">Üye Ol</h1>
       </div>
+
+      {discountCode && (
+        <div className="mb-5 border border-dashed border-gold-deep bg-gold-tint px-4 py-3 text-center text-xs text-ink">
+          <span className="font-medium">{discountCode}</span> kodu üyeliğiniz tamamlandıktan
+          sonra ödeme sayfasında kullanılabilir.
+        </div>
+      )}
 
       <form action={formAction} className="flex flex-col gap-4">
         <div>

@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export interface HeroImage {
   id: string;
@@ -8,7 +8,7 @@ export interface HeroImage {
 }
 
 export const getHeroImages = cache(async (): Promise<HeroImage[]> => {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("hero_images")
     .select("id, image_url, position")

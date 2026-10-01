@@ -2,6 +2,7 @@ import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/ui/ProductCard";
+import ProductFilters from "@/components/product/ProductFilters";
 import { getCategories, categoryLabelMap } from "@/lib/data/categories";
 import { getProducts } from "@/lib/data/products";
 
@@ -10,17 +11,31 @@ export const metadata = {
 };
 
 interface MagazaPageProps {
-  searchParams: Promise<{ kategori?: string; ara?: string }>;
+  searchParams: Promise<{ kategori?: string; ara?: string; sirala?: string; stokta?: string }>;
 }
 
 export default async function MagazaPage({ searchParams }: MagazaPageProps) {
-  const { kategori, ara } = await searchParams;
+  const { kategori, ara, sirala, stokta } = await searchParams;
   const categories = await getCategories();
   const labels = categoryLabelMap(categories);
   const activeCategory = categories.some((c) => c.slug === kategori) ? kategori : undefined;
   const search = ara?.trim() || undefined;
 
-  const products = await getProducts(activeCategory, search);
+  let products = await getProducts(activeCategory, search);
+
+  if (stokta === "1") {
+    products = products.filter((p) => (p.stock ?? 0) > 0);
+  }
+
+  if (sirala === "cok-satan") {
+    products = products
+      .slice()
+      .sort((a, b) => Number(b.isBestSeller) - Number(a.isBestSeller));
+  } else if (sirala === "fiyat-artan") {
+    products = products.slice().sort((a, b) => a.price - b.price);
+  } else if (sirala === "fiyat-azalan") {
+    products = products.slice().sort((a, b) => b.price - a.price);
+  }
 
   return (
     <>
@@ -65,6 +80,8 @@ export default async function MagazaPage({ searchParams }: MagazaPageProps) {
               </Link>
             ))}
           </div>
+
+          <ProductFilters />
 
           {products.length === 0 ? (
             <p className="text-center text-sm text-ink-soft">

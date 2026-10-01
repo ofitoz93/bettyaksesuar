@@ -4,6 +4,8 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { getBlogPostBySlug } from "@/lib/data/blog";
 
+export const revalidate = 300;
+
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }

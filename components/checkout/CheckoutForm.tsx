@@ -4,10 +4,11 @@ import { useActionState, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/CartContext";
 import { createClient } from "@/lib/supabase/client";
-import { createOrder, type CheckoutState } from "@/app/odeme/actions";
+import { createOrder, validateDiscountCode, type CheckoutState } from "@/app/odeme/actions";
 import { calculateShippingFee, type ShippingSettings } from "@/lib/shipping";
 import type { CurrentProfile } from "@/lib/data/profile";
 import type { PaymentMethod } from "@/lib/data/paymentMethods";
+import { TURKEY_PROVINCES } from "@/lib/turkeyProvinces";
 import PaytrPaymentFrame from "./PaytrPaymentFrame";
 
 const initialState: CheckoutState = {};
@@ -30,6 +31,86 @@ export default function CheckoutForm({ shippingSettings, profile, paymentMethods
   const paymentDiscount = activeMethod
     ? Math.round(((totalPrice * activeMethod.extraDiscountPercent) / 100) * 100) / 100
     : 0;
+
+  const [city, setCity] = useState("");
+  const [district, setDistrict] = useState("");
+  const [neighbourhood, setNeighbourhood] = useState("");
+  const [districts, setDistricts] = useState<string[]>([]);
+  const [neighbourhoods, setNeighbourhoods] = useState<string[]>([]);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
+  const [loadingNeighbourhoods, setLoadingNeighbourhoods] = useState(false);
+  const [sameBillingAddress, setSameBillingAddress] = useState(true);
+
+  const handleCityChange = async (value: string) => {
+    setCity(value);
+    setDistrict("");
+    setNeighbourhood("");
+    setDistricts([]);
+    setNeighbourhoods([]);
+    if (!value) return;
+
+    setLoadingDistricts(true);
+    try {
+      const res = await fetch(`/api/turkey/ilceler?il=${encodeURIComponent(value)}`);
+      const data = await res.json();
+      setDistricts(data.districts ?? []);
+    } finally {
+      setLoadingDistricts(false);
+    }
+  };
+
+  const handleDistrictChange = async (value: string) => {
+    setDistrict(value);
+    setNeighbourhood("");
+    setNeighbourhoods([]);
+    if (!value) return;
+
+    setLoadingNeighbourhoods(true);
+    try {
+      const res = await fetch(
+        `/api/turkey/mahalleler?il=${encodeURIComponent(city)}&ilce=${encodeURIComponent(value)}`,
+      );
+      const data = await res.json();
+      setNeighbourhoods(data.neighbourhoods ?? []);
+    } finally {
+      setLoadingNeighbourhoods(false);
+    }
+  };
+
+  const [discountInput, setDiscountInput] = useState("");
+  const [applyingDiscount, setApplyingDiscount] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; percent: number } | null>(
+    null,
+  );
+  const [discountError, setDiscountError] = useState<string | null>(null);
+  const discountAmount = appliedDiscount
+    ? Math.round(((totalPrice * appliedDiscount.percent) / 100) * 100) / 100
+    : 0;
+
+  const handleApplyDiscount = async () => {
+    setApplyingDiscount(true);
+    setDiscountError(null);
+    const result = await validateDiscountCode(discountInput);
+    setApplyingDiscount(false);
+
+    if (!result.valid) {
+      setAppliedDiscount(null);
+      setDiscountError(result.error ?? "Geçersiz indirim kodu.");
+      return;
+    }
+
+    setAppliedDiscount({ code: discountInput.trim(), percent: result.discountPercent ?? 0 });
+  };
+
+  const handleDiscountInputChange = (value: string) => {
+    setDiscountInput(value);
+    if (appliedDiscount) {
+      setAppliedDiscount(null);
+    }
+    if (discountError) {
+      setDiscountError(null);
+    }
+  };
 
   // Sepetteki ürünleri veritabanıyla karşılaştırıp silinmiş ürünleri kaldırır,
   // stoktan fazla adetleri kırpar — "Ürün bulunamadı" hatasını sipariş
@@ -200,15 +281,109 @@ export default function CheckoutForm({ shippingSettings, profile, paymentMethods
           />
         </Field>
 
+        <div className="grid grid-cols-2 gap-5">
+          <Field label="İl">
+            <select
+              name="city"
+              required
+              value={city}
+              onChange={(e) => handleCityChange(e.target.value)}
+              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
+            >
+              <option value="" disabled>
+                İl seçin
+              </option>
+              {TURKEY_PROVINCES.map((province) => (
+                <option key={province} value={province}>
+                  {province}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="İlçe">
+            <select
+              name="district"
+              required
+              value={district}
+              disabled={!city || loadingDistricts}
+              onChange={(e) => handleDistrictChange(e.target.value)}
+              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink disabled:opacity-50"
+            >
+              <option value="" disabled>
+                {loadingDistricts ? "Yükleniyor..." : "İlçe seçin"}
+              </option>
+              {districts.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+
+        <Field label="Mahalle">
+          {neighbourhoods.length > 0 ? (
+            <select
+              name="neighbourhood"
+              required
+              value={neighbourhood}
+              disabled={!district || loadingNeighbourhoods}
+              onChange={(e) => setNeighbourhood(e.target.value)}
+              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink disabled:opacity-50"
+            >
+              <option value="" disabled>
+                {loadingNeighbourhoods ? "Yükleniyor..." : "Mahalle seçin"}
+              </option>
+              {neighbourhoods.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              name="neighbourhood"
+              required
+              disabled={!district}
+              value={neighbourhood}
+              onChange={(e) => setNeighbourhood(e.target.value)}
+              placeholder={district ? "Mahalle adı" : "Önce ilçe seçin"}
+              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink disabled:opacity-50"
+            />
+          )}
+        </Field>
+
         <Field label="Teslimat Adresi">
           <textarea
             name="address"
             required
-            rows={4}
-            placeholder="Mahalle, cadde/sokak, no, ilçe/il, posta kodu"
+            rows={3}
+            placeholder="Cadde/sokak, bina no, daire no, posta kodu"
             className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
           />
         </Field>
+
+        <label className="flex items-center gap-2.5 text-xs text-ink-soft">
+          <input
+            type="checkbox"
+            checked={sameBillingAddress}
+            onChange={(e) => setSameBillingAddress(e.target.checked)}
+            className="h-4 w-4"
+          />
+          Fatura adresim teslimat adresimle aynı
+        </label>
+
+        {!sameBillingAddress && (
+          <Field label="Fatura Adresi">
+            <textarea
+              name="billingAddress"
+              required={!sameBillingAddress}
+              rows={3}
+              placeholder="İl, ilçe, mahalle, cadde/sokak, bina no, daire no, posta kodu"
+              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
+            />
+          </Field>
+        )}
 
         <div>
           <label className="mb-2 block text-xs tracking-wide text-ink-soft">Ödeme Yöntemi</label>
@@ -239,11 +414,29 @@ export default function CheckoutForm({ shippingSettings, profile, paymentMethods
         </div>
 
         <Field label={profile ? "İndirim Kodu (opsiyonel)" : "İndirim Kodu (üye girişi gerektirir)"}>
-          <input
-            name="discountCode"
-            placeholder="Örn: HOSGELDIN10"
-            className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
-          />
+          <div className="flex gap-2">
+            <input
+              value={discountInput}
+              onChange={(e) => handleDiscountInputChange(e.target.value)}
+              placeholder="Örn: HOSGELDIN10"
+              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
+            />
+            <button
+              type="button"
+              onClick={handleApplyDiscount}
+              disabled={applyingDiscount || !discountInput.trim()}
+              className="shrink-0 border border-ink px-4 py-2.5 text-xs font-medium tracking-[0.1em] uppercase whitespace-nowrap hover:bg-ink hover:text-ivory disabled:opacity-40"
+            >
+              {applyingDiscount ? "Kontrol..." : "Kodu Kullan"}
+            </button>
+          </div>
+          <input type="hidden" name="discountCode" value={appliedDiscount?.code ?? ""} />
+          {discountError && <p className="mt-1.5 text-xs text-status-red-fg">{discountError}</p>}
+          {appliedDiscount && (
+            <p className="mt-1.5 text-xs text-status-green-fg">
+              Kod uygulandı: %{appliedDiscount.percent} indirim
+            </p>
+          )}
         </Field>
 
         <label className="flex items-start gap-2.5 text-xs text-ink-soft">
@@ -311,9 +504,15 @@ export default function CheckoutForm({ shippingSettings, profile, paymentMethods
             <span>-₺{paymentDiscount}</span>
           </div>
         )}
+        {appliedDiscount && (
+          <div className="mt-2 flex justify-between text-sm text-status-green-fg">
+            <span>İndirim kodu (%{appliedDiscount.percent})</span>
+            <span>-₺{discountAmount}</span>
+          </div>
+        )}
         <div className="mt-3 flex justify-between border-t border-line pt-3 text-sm">
           <span>Toplam</span>
-          <span>₺{totalPrice + shippingFee - paymentDiscount}</span>
+          <span>₺{totalPrice + shippingFee - paymentDiscount - discountAmount}</span>
         </div>
       </div>
     </div>

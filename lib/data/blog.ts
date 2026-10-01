@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export interface BlogPost {
   id: string;
@@ -46,7 +47,7 @@ function mapRow(row: {
 }
 
 export async function getPublishedBlogPosts(): Promise<BlogPost[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("blog_posts")
     .select("*")
@@ -58,7 +59,7 @@ export async function getPublishedBlogPosts(): Promise<BlogPost[]> {
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("blog_posts")
     .select("*")

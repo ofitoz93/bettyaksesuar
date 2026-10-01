@@ -7,10 +7,12 @@ import "@fontsource/jost/500.css";
 import "@fontsource/jost/600.css";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart/CartContext";
+import { FavoritesProvider } from "@/lib/favorites/FavoritesContext";
 import PromoPopup from "@/components/PromoPopup";
+import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import { getPromoPopupSettings } from "@/lib/data/promoPopup";
 import { getBestSellers } from "@/lib/data/products";
-import { createClient } from "@/lib/supabase/server";
+import { getSiteSettings } from "@/lib/data/siteSettings";
 
 export const metadata: Metadata = {
   title: "Betty Aksesuar | Su Geçirmez Çelik Takı",
@@ -23,20 +25,22 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createClient();
-  const [promoSettings, { data: { user } }, promoProducts] = await Promise.all([
+  const [promoSettings, promoProducts, siteSettings] = await Promise.all([
     getPromoPopupSettings(),
-    supabase.auth.getUser(),
-    getBestSellers(3),
+    getBestSellers(4),
+    getSiteSettings(),
   ]);
 
   return (
     <html lang="tr">
       <body className="font-sans antialiased">
-        <CartProvider>
-          {children}
-          <PromoPopup settings={promoSettings} loggedIn={!!user} products={promoProducts} />
-        </CartProvider>
+        <FavoritesProvider>
+          <CartProvider>
+            <AnnouncementBar texts={siteSettings.announcementTexts} />
+            {children}
+            <PromoPopup settings={promoSettings} products={promoProducts} />
+          </CartProvider>
+        </FavoritesProvider>
       </body>
     </html>
   );

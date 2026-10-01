@@ -5,9 +5,11 @@ import ProductGallery from "@/components/product/ProductGallery";
 import AddToCartButton from "@/components/product/AddToCartButton";
 import StockNotifyForm from "@/components/product/StockNotifyForm";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
+import FavoriteButton from "@/components/ui/FavoriteButton";
 import { getCategoryBySlug } from "@/lib/data/categories";
 import { getProductBySlug } from "@/lib/data/products";
-import { getCurrentProfile } from "@/lib/data/profile";
+
+export const revalidate = 300;
 
 interface UrunPageProps {
   params: Promise<{ slug: string }>;
@@ -30,10 +32,7 @@ export async function generateMetadata({ params }: UrunPageProps) {
 
 export default async function UrunPage({ params }: UrunPageProps) {
   const { slug } = await params;
-  const [product, profile] = await Promise.all([
-    getProductBySlug(slug),
-    getCurrentProfile(),
-  ]);
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
@@ -51,8 +50,14 @@ export default async function UrunPage({ params }: UrunPageProps) {
           <ProductGallery product={product} />
 
           <div>
-            <div className="text-[11px] font-medium tracking-[0.22em] text-gold-deep uppercase">
-              {category?.name ?? product.category}
+            <div className="flex items-start justify-between gap-4">
+              <div className="text-[11px] font-medium tracking-[0.22em] text-gold-deep uppercase">
+                {category?.name ?? product.category}
+              </div>
+              <FavoriteButton
+                productId={product.id}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line text-ink transition-colors hover:border-gold-deep hover:text-gold-deep"
+              />
             </div>
             <h1 className="font-display mt-2.5 text-[34px]">{product.name}</h1>
 
@@ -83,7 +88,6 @@ export default async function UrunPage({ params }: UrunPageProps) {
                   productId={product.id}
                   productName={product.name}
                   productSlug={product.slug}
-                  userEmail={profile?.email}
                 />
               </div>
             )}

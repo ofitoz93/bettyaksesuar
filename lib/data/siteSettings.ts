@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export interface NavLink {
   label: string;
@@ -10,7 +10,8 @@ export interface SiteSettings {
   siteName: string;
   siteTagline: string;
   logoUrl: string | null;
-  announcementText: string;
+  logoHeight: number;
+  announcementTexts: string[];
   heroEyebrow: string;
   heroHeading: string;
   heroSubtitle: string;
@@ -46,8 +47,12 @@ const DEFAULT_SETTINGS: SiteSettings = {
   siteName: "BETTY",
   siteTagline: "AKSESUAR",
   logoUrl: null,
-  announcementText:
-    "1.000 TL ÜZERİ ÜCRETSİZ KARGO  ·  2 YIL GARANTİ  ·  SU GEÇİRMEZ ÇELİK KOLEKSİYON",
+  logoHeight: 56,
+  announcementTexts: [
+    "1.000 TL ÜZERİ ÜCRETSİZ KARGO",
+    "2 YIL GARANTİ",
+    "SU GEÇİRMEZ ÇELİK KOLEKSİYON",
+  ],
   heroEyebrow: "2026 SONBAHAR KOLEKSİYONU",
   heroHeading: "Zarafetin\nYeni Adı",
   heroSubtitle:
@@ -101,7 +106,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
 };
 
 export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("site_settings")
     .select("*")
@@ -116,7 +121,14 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
     siteName: data.site_name,
     siteTagline: data.site_tagline,
     logoUrl: data.logo_url,
-    announcementText: data.announcement_text,
+    logoHeight:
+      typeof data.logo_height === "number" && data.logo_height > 0
+        ? data.logo_height
+        : DEFAULT_SETTINGS.logoHeight,
+    announcementTexts:
+      Array.isArray(data.announcement_texts) && data.announcement_texts.length > 0
+        ? data.announcement_texts
+        : DEFAULT_SETTINGS.announcementTexts,
     heroEyebrow: data.hero_eyebrow,
     heroHeading: data.hero_heading,
     heroSubtitle: data.hero_subtitle,

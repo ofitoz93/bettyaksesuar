@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export interface PromoPopupSettings {
   enabled: boolean;
@@ -24,7 +24,7 @@ const DEFAULT_SETTINGS: PromoPopupSettings = {
 };
 
 export const getPromoPopupSettings = cache(async (): Promise<PromoPopupSettings> => {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("promo_popup_settings")
     .select("*")

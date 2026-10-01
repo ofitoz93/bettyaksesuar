@@ -34,14 +34,23 @@ export async function createOrder(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const district = String(formData.get("district") ?? "").trim();
+  const neighbourhood = String(formData.get("neighbourhood") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();
+  const sameBillingAddress = formData.get("billingAddress") === null;
+  const billingAddress = String(formData.get("billingAddress") ?? "").trim();
   const paymentMethod = String(formData.get("paymentMethod") ?? "");
   const discountCode = String(formData.get("discountCode") ?? "").trim();
   const itemsRaw = String(formData.get("items") ?? "[]");
   const termsAccepted = formData.get("termsAccepted") === "on";
 
-  if (!name || !email || !phone || !address) {
-    return { error: "Lütfen ad, e-posta, telefon ve adres alanlarını doldurun." };
+  if (!name || !email || !phone || !city || !district || !neighbourhood || !address) {
+    return { error: "Lütfen ad, e-posta, telefon, il, ilçe, mahalle ve adres alanlarını doldurun." };
+  }
+
+  if (!sameBillingAddress && !billingAddress) {
+    return { error: "Lütfen fatura adresini girin ya da teslimat adresiyle aynı olduğunu işaretleyin." };
   }
 
   if (
@@ -79,6 +88,10 @@ export async function createOrder(
     p_guest_email: email,
     p_guest_phone: phone,
     p_shipping_address: address,
+    p_city: city,
+    p_district: district,
+    p_neighbourhood: neighbourhood,
+    p_billing_address: sameBillingAddress ? null : billingAddress,
     p_payment_method: paymentMethod,
     p_items: items.map((item) => ({
       product_id: item.productId,
@@ -104,6 +117,49 @@ export async function createOrder(
       paymentMethod: order.payment_method,
     },
   };
+}
+
+export interface DiscountValidation {
+  valid: boolean;
+  discountPercent?: number;
+  error?: string;
+}
+
+export async function validateDiscountCode(code: string): Promise<DiscountValidation> {
+  const trimmed = code.trim();
+  if (!trimmed) {
+    return { valid: false, error: "Lütfen bir indirim kodu girin." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { valid: false, error: "Bu indirim kodu yalnızca üye girişi yapan müşteriler için geçerlidir." };
+  }
+
+  const { data: promo } = await supabase
+    .from("promo_popup_settings")
+    .select("enabled, discount_code, discount_percent")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (!promo || !promo.enabled || promo.discount_code.toLowerCase() !== trimmed.toLowerCase()) {
+    return { valid: false, error: "Geçersiz indirim kodu." };
+  }
+
+  const { count } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("customer_id", user.id);
+
+  if ((count ?? 0) > 0) {
+    return { valid: false, error: "Bu indirim kodu yalnızca ilk siparişinizde geçerlidir." };
+  }
+
+  return { valid: true, discountPercent: Number(promo.discount_percent) };
 }
 
 export interface PaytrTokenState {

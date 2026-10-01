@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export interface ContentPage {
   slug: string;
@@ -7,7 +8,7 @@ export interface ContentPage {
 }
 
 export async function getContentPage(slug: string): Promise<ContentPage | null> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("content_pages")
     .select("slug, title, body")

@@ -39,7 +39,7 @@ export default function AdminSidebar({
           );
         }
 
-        const isCollapsed = collapsedGroups[group.label] ?? false;
+        const isCollapsed = collapsedGroups[group.label] ?? true;
 
         return (
           <div key={group.label} className="mt-1">

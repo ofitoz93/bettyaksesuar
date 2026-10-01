@@ -96,3 +96,48 @@ h3 {
 .group:hover .sparkle {
   animation-play-state: running;
 }
+
+@keyframes heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.4);
+  }
+  60% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.favorite-pop {
+  animation: heart-pop 0.45s ease-out;
+}
+
+@keyframes heart-rain-fall {
+  0% {
+    transform: translate(0, 0) scale(0.5) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(0.85) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
+.heart-particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: -8px 0 0 -8px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--color-gold-deep);
+  pointer-events: none;
+  animation: heart-rain-fall 0.9s ease-in forwards;
+}

@@ -1,13 +1,25 @@
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import NewsletterForm from "./NewsletterForm";
 
-export default async function Newsletter() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function Newsletter() {
+  const [loggedIn, setLoggedIn] = useState(false);
 
-  if (user) {
+  useEffect(() => {
+    let cancelled = false;
+    createClient()
+      .auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!cancelled && user) setLoggedIn(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loggedIn) {
     return null;
   }
 

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import type { Product, ProductCategory } from "@/lib/types";
 
 interface ProductRow {
@@ -59,7 +60,7 @@ export async function getProducts(
   search?: string,
   options?: { includeInactive?: boolean },
 ): Promise<Product[]> {
-  const supabase = await createClient();
+  const supabase = options?.includeInactive ? await createClient() : createPublicClient();
   let query = supabase
     .from("products")
     .select(PRODUCT_SELECT)
@@ -87,7 +88,7 @@ export async function getProducts(
 }
 
 export async function getBestSellers(limit = 4): Promise<Product[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)
@@ -105,7 +106,7 @@ export async function getBestSellers(limit = 4): Promise<Product[]> {
 }
 
 export async function getNewArrivals(limit = 20): Promise<Product[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)
@@ -122,7 +123,7 @@ export async function getNewArrivals(limit = 20): Promise<Product[]> {
 }
 
 export async function getDiscountedProducts(): Promise<Product[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)
@@ -139,7 +140,7 @@ export async function getDiscountedProducts(): Promise<Product[]> {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)

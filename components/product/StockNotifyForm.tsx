@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { requestStockNotification, type StockNotifyState } from "@/app/urun/actions";
+import { createClient } from "@/lib/supabase/client";
 
 const initialState: StockNotifyState = {};
 
@@ -9,14 +10,25 @@ export default function StockNotifyForm({
   productId,
   productName,
   productSlug,
-  userEmail,
 }: {
   productId: string;
   productName: string;
   productSlug: string;
-  userEmail?: string | null;
 }) {
   const [state, formAction, pending] = useActionState(requestStockNotification, initialState);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    createClient()
+      .auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!cancelled && user?.email) setUserEmail(user.email);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (state.info) {
     return <p className="mt-3.5 text-xs text-gold-deep">{state.info}</p>;

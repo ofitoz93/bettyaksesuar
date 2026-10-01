@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { getDashboardStats } from "@/lib/data/dashboard";
+import { getDashboardStats, getOrdersByCity } from "@/lib/data/dashboard";
+import TurkeyOrdersMap from "@/components/admin/TurkeyOrdersMap";
 
 export default async function AdminDashboardPage() {
-  const stats = await getDashboardStats();
+  const [stats, cityOrders] = await Promise.all([getDashboardStats(), getOrdersByCity()]);
 
   const cards = [
     { label: "Toplam Sipariş", value: stats.totalOrders, href: "/admin/siparisler" },
@@ -37,6 +38,9 @@ export default async function AdminDashboardPage() {
           </Link>
         ))}
       </div>
+
+      <h2 className="font-display mt-10 mb-4 text-xl">Siparişlerin Geldiği İller</h2>
+      <TurkeyOrdersMap cities={cityOrders} />
     </div>
   );
 }

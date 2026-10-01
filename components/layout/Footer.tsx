@@ -33,7 +33,8 @@ export default async function Footer() {
                 alt={settings.siteName}
                 width={340}
                 height={340}
-                className="mb-3.5 h-40 w-auto object-contain"
+                style={{ height: settings.logoHeight, width: "auto" }}
+                className="mb-3.5 object-contain"
               />
             ) : (
               <div className="font-display mb-3.5 text-[23px] tracking-[0.24em]">

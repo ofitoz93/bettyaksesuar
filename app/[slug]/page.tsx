@@ -3,6 +3,8 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { getContentPage } from "@/lib/data/contentPages";
 
+export const revalidate = 300;
+
 interface ContentPageProps {
   params: Promise<{ slug: string }>;
 }

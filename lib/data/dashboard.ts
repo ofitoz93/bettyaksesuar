@@ -59,3 +59,33 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     pendingStockRequests: pendingStockRequests ?? 0,
   };
 }
+
+export interface CityOrderCount {
+  city: string;
+  orderCount: number;
+  revenue: number;
+}
+
+export async function getOrdersByCity(): Promise<CityOrderCount[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("orders")
+    .select("city, total")
+    .not("status", "eq", "iptal");
+
+  if (error || !data) return [];
+
+  const byCity = new Map<string, { orderCount: number; revenue: number }>();
+  for (const row of data) {
+    const city = (row.city as string | null)?.trim();
+    if (!city) continue;
+    const entry = byCity.get(city) ?? { orderCount: 0, revenue: 0 };
+    entry.orderCount += 1;
+    entry.revenue += Number(row.total);
+    byCity.set(city, entry);
+  }
+
+  return Array.from(byCity.entries())
+    .map(([city, stats]) => ({ city, ...stats }))
+    .sort((a, b) => b.orderCount - a.orderCount);
+}

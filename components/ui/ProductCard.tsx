@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Product } from "@/lib/types";
 import CategoryIcon from "./CategoryIcon";
 import Badge from "./Badge";
+import FavoriteButton from "./FavoriteButton";
 
 export default function ProductCard({
   product,
@@ -38,6 +39,12 @@ export default function ProductCard({
         {product.discountPercent && (
           <Badge tone="gold">-%{product.discountPercent}</Badge>
         )}
+        <FavoriteButton
+          productId={product.id}
+          className={`absolute z-10 flex items-center justify-center rounded-full bg-white/90 text-ink shadow-sm transition-colors hover:text-gold-deep ${
+            compact ? "top-1.5 right-1.5 h-6 w-6" : "top-2.5 right-2.5 h-8 w-8"
+          }`}
+        />
       </div>
       <div
         className={`text-ink group-hover:text-gold-deep ${compact ? "line-clamp-1 text-[11px]" : "text-sm"}`}

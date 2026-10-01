@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import type { ShippingSettings } from "@/lib/shipping";
 
 const DEFAULT_SETTINGS: ShippingSettings = {
@@ -8,7 +8,7 @@ const DEFAULT_SETTINGS: ShippingSettings = {
 };
 
 export async function getShippingSettings(): Promise<ShippingSettings> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("shipping_settings")
     .select("free_shipping_threshold, standard_shipping_fee, per_item_fee")

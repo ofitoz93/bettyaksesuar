@@ -527,7 +527,19 @@ export async function updateSiteSettings(
 ): Promise<ActionState> {
   const siteName = String(formData.get("siteName") ?? "").trim();
   const siteTagline = String(formData.get("siteTagline") ?? "").trim();
-  const announcementText = String(formData.get("announcementText") ?? "").trim();
+  const logoHeightRaw = Number(formData.get("logoHeight"));
+  const logoHeight = Number.isFinite(logoHeightRaw)
+    ? Math.min(160, Math.max(24, Math.round(logoHeightRaw)))
+    : 56;
+  let announcementTexts: string[] = [];
+  try {
+    const parsed = JSON.parse(String(formData.get("announcementTexts") ?? "[]"));
+    if (Array.isArray(parsed)) {
+      announcementTexts = parsed.filter((t): t is string => typeof t === "string" && t.trim() !== "");
+    }
+  } catch {
+    announcementTexts = [];
+  }
   const heroEyebrow = String(formData.get("heroEyebrow") ?? "").trim();
   const heroHeading = String(formData.get("heroHeading") ?? "").trim();
   const heroSubtitle = String(formData.get("heroSubtitle") ?? "").trim();
@@ -552,7 +564,7 @@ export async function updateSiteSettings(
   if (
     !siteName ||
     !siteTagline ||
-    !announcementText ||
+    announcementTexts.length === 0 ||
     !heroEyebrow ||
     !heroHeading ||
     !heroSubtitle ||
@@ -582,7 +594,8 @@ export async function updateSiteSettings(
     .update({
       site_name: siteName,
       site_tagline: siteTagline,
-      announcement_text: announcementText,
+      logo_height: logoHeight,
+      announcement_texts: announcementTexts,
       hero_eyebrow: heroEyebrow,
       hero_heading: heroHeading,
       hero_subtitle: heroSubtitle,

@@ -5,6 +5,8 @@ import Image from "next/image";
 import { updateSiteSettings } from "@/app/admin/actions";
 import type { ActionState } from "@/app/admin/actions";
 import type { SiteSettings } from "@/lib/data/siteSettings";
+import AnnouncementListEditor from "@/components/admin/AnnouncementListEditor";
+import LogoSettings from "@/components/admin/LogoSettings";
 
 const initialState: ActionState = {};
 
@@ -33,37 +35,18 @@ export default function SiteSettingsForm({ settings }: { settings: SiteSettings 
             />
           </Field>
         </div>
-        {settings.logoUrl && (
-          <div className="relative mt-4 mb-3 h-12 w-40 overflow-hidden">
-            <Image src={settings.logoUrl} alt="" fill sizes="160px" className="object-contain" />
-          </div>
-        )}
-        <div className="mt-4">
-          <label className="mb-1.5 block text-xs tracking-wide text-ink-soft">
-            Logo Görseli (opsiyonel)
-          </label>
-          <input
-            name="logo"
-            type="file"
-            accept="image/*"
-            className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
-          />
-          <p className="mt-1.5 text-xs text-ink-faint">
-            Logo yüklerseniz site adı/alt başlık yerine header ve footer&apos;da bu görsel
-            gösterilir.
-          </p>
-        </div>
+        <LogoSettings
+          siteName={settings.siteName}
+          siteTagline={settings.siteTagline}
+          logoUrl={settings.logoUrl}
+          logoHeight={settings.logoHeight}
+        />
       </div>
 
       <div className="border-t border-line pt-6">
         <h2 className="mb-4 text-sm font-medium">Duyuru Şeridi</h2>
-        <Field label="Sayfanın en üstündeki şerit metni">
-          <input
-            name="announcementText"
-            required
-            defaultValue={settings.announcementText}
-            className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
-          />
+        <Field label="Sayfanın en üstündeki şeritte sırayla dönen mesajlar">
+          <AnnouncementListEditor name="announcementTexts" defaultTexts={settings.announcementTexts} />
         </Field>
       </div>
 

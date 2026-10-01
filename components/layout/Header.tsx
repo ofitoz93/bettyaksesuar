@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import CartLink from "./CartLink";
+import AccountLink from "./AccountLink";
 import SearchBox from "./SearchBox";
-import { createClient } from "@/lib/supabase/server";
 import { getSiteSettings } from "@/lib/data/siteSettings";
 
 interface HeaderProps {
@@ -11,14 +11,7 @@ interface HeaderProps {
 
 export default async function Header({ variant = "transparent" }: HeaderProps) {
   const isSolid = variant === "solid";
-  const supabase = await createClient();
-  const [
-    {
-      data: { user },
-    },
-    settings,
-  ] = await Promise.all([supabase.auth.getUser(), getSiteSettings()]);
-  const accountHref = user ? "/hesabim" : "/hesabim/giris";
+  const settings = await getSiteSettings();
 
   return (
     <header
@@ -56,7 +49,8 @@ export default async function Header({ variant = "transparent" }: HeaderProps) {
               width={340}
               height={340}
               priority
-              className="mx-auto h-36 w-auto object-contain"
+              style={{ height: settings.logoHeight, width: "auto" }}
+              className="mx-auto object-contain"
             />
           ) : (
             <>
@@ -92,7 +86,7 @@ export default async function Header({ variant = "transparent" }: HeaderProps) {
               </Link>
             ))}
           </nav>
-          <Link href={accountHref} aria-label="Hesabım">
+          <Link href="/favoriler" aria-label="Favorilerim">
             <svg
               width="19"
               height="19"
@@ -101,11 +95,12 @@ export default async function Header({ variant = "transparent" }: HeaderProps) {
               stroke="currentColor"
               strokeWidth={1.4}
               strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <path d="M20 21c0-3.9-3.6-7-8-7s-8 3.1-8 7" />
-              <circle cx="12" cy="7" r="4" />
+              <path d="M12 21s-7.5-4.6-10.1-9.3C.3 8.6 1.6 5 5 4a5 5 0 0 1 7 1.5A5 5 0 0 1 19 4c3.4 1 4.7 4.6 3.1 7.7C19.5 16.4 12 21 12 21Z" />
             </svg>
           </Link>
+          <AccountLink />
           <CartLink solid={isSolid} />
         </div>
       </div>

@@ -9,16 +9,10 @@ import InstagramStrip from "@/components/sections/InstagramStrip";
 import Newsletter from "@/components/sections/Newsletter";
 import Footer from "@/components/layout/Footer";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
-import { getSiteSettings } from "@/lib/data/siteSettings";
 
-export default async function Home() {
-  const settings = await getSiteSettings();
-
+export default function Home() {
   return (
     <>
-      <div className="bg-ink px-4 py-2.5 text-center text-[11.5px] tracking-wide text-ivory">
-        {settings.announcementText}
-      </div>
       <Hero />
       <TrustBar />
       <CategoryGrid />

@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export interface StoreSettings {
   storeName: string;
@@ -66,7 +66,7 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
 };
 
 export const getStoreSettings = cache(async (): Promise<StoreSettings> => {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("store_settings")
     .select("*")
