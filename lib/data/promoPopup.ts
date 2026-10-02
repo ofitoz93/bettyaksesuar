@@ -9,7 +9,6 @@ export interface PromoPopupSettings {
   imageUrl: string | null;
   buttonLabel: string;
   discountCode: string;
-  discountPercent: number;
 }
 
 const DEFAULT_SETTINGS: PromoPopupSettings = {
@@ -20,7 +19,6 @@ const DEFAULT_SETTINGS: PromoPopupSettings = {
   imageUrl: null,
   buttonLabel: "Kodu Al",
   discountCode: "HOSGELDIN10",
-  discountPercent: 10,
 };
 
 export const getPromoPopupSettings = cache(async (): Promise<PromoPopupSettings> => {
@@ -43,6 +41,5 @@ export const getPromoPopupSettings = cache(async (): Promise<PromoPopupSettings>
     imageUrl: data.image_url,
     buttonLabel: data.button_label,
     discountCode: data.discount_code,
-    discountPercent: Number(data.discount_percent),
   };
 });

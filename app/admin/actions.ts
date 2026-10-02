@@ -950,16 +950,8 @@ export async function updatePromoPopupSettings(
   const body = String(formData.get("body") ?? "").trim();
   const buttonLabel = String(formData.get("buttonLabel") ?? "").trim();
   const discountCode = String(formData.get("discountCode") ?? "").trim();
-  const discountPercent = Number(formData.get("discountPercent"));
 
-  if (
-    !title ||
-    !body ||
-    !buttonLabel ||
-    !discountCode ||
-    !Number.isFinite(delaySeconds) ||
-    !Number.isFinite(discountPercent)
-  ) {
+  if (!title || !body || !buttonLabel || !discountCode || !Number.isFinite(delaySeconds)) {
     return { error: "Lütfen tüm zorunlu alanları doldurun." };
   }
 
@@ -975,7 +967,6 @@ export async function updatePromoPopupSettings(
       body,
       button_label: buttonLabel,
       discount_code: discountCode,
-      discount_percent: Math.min(90, Math.max(0, discountPercent)),
       ...(imageUrl ? { image_url: imageUrl } : {}),
       updated_at: new Date().toISOString(),
     })
@@ -1262,6 +1253,105 @@ export async function deleteBlogPost(id: string) {
 
   revalidatePath("/blog");
   revalidatePath("/admin/blog");
+}
+
+// ============ PAZARLAMA: KAMPANYALAR ============
+
+function readCampaignFields(formData: FormData) {
+  const code = String(formData.get("code") ?? "").trim().toUpperCase();
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const discountPercent = Number(formData.get("discountPercent"));
+  const enabled = formData.get("enabled") === "on";
+
+  return { code, title, description, discountPercent, enabled };
+}
+
+export async function createCampaign(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const fields = readCampaignFields(formData);
+
+  if (!fields.code || !fields.title) {
+    return { error: "Kod ve başlık zorunlu." };
+  }
+
+  if (!Number.isFinite(fields.discountPercent) || fields.discountPercent <= 0 || fields.discountPercent > 90) {
+    return { error: "İndirim yüzdesi 1 ile 90 arasında olmalı." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("discount_campaigns").insert({
+    code: fields.code,
+    title: fields.title,
+    description: fields.description || null,
+    discount_percent: fields.discountPercent,
+    enabled: fields.enabled,
+  });
+
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Bu kampanya kodu zaten kullanılıyor."
+          : `Kaydedilemedi: ${error.message}`,
+    };
+  }
+
+  revalidatePath("/admin/pazarlama/kampanyalar");
+  redirect("/admin/pazarlama/kampanyalar");
+}
+
+export async function updateCampaign(
+  id: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const fields = readCampaignFields(formData);
+
+  if (!fields.code || !fields.title) {
+    return { error: "Kod ve başlık zorunlu." };
+  }
+
+  if (!Number.isFinite(fields.discountPercent) || fields.discountPercent <= 0 || fields.discountPercent > 90) {
+    return { error: "İndirim yüzdesi 1 ile 90 arasında olmalı." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("discount_campaigns")
+    .update({
+      code: fields.code,
+      title: fields.title,
+      description: fields.description || null,
+      discount_percent: fields.discountPercent,
+      enabled: fields.enabled,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Bu kampanya kodu zaten kullanılıyor."
+          : `Kaydedilemedi: ${error.message}`,
+    };
+  }
+
+  revalidatePath("/admin/pazarlama/kampanyalar");
+  redirect("/admin/pazarlama/kampanyalar");
+}
+
+export async function setCampaignEnabled(id: string, enabled: boolean) {
+  const supabase = await createClient();
+  await supabase
+    .from("discount_campaigns")
+    .update({ enabled, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  revalidatePath("/admin/pazarlama/kampanyalar");
 }
 
 // ============ TEMA DÜZENİ: HEADER / FOOTER ============

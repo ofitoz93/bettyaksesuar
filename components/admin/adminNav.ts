@@ -42,6 +42,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     label: "Pazarlama",
     links: [
+      { label: "Kampanyalar", href: "/admin/pazarlama/kampanyalar" },
       { label: "Kampanya Popup'ı", href: "/admin/ayarlar/kampanya" },
       { label: "Hediye Çeki", href: "/admin/sistem/hediye-ceki" },
     ],

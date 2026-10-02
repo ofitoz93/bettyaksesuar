@@ -101,18 +101,6 @@ export default function PromoPopupForm({ settings }: { settings: PromoPopupSetti
           </Field>
         </div>
 
-        <Field label="İndirim Yüzdesi (yalnızca üye olup ilk siparişini veren müşteriye uygulanır)">
-          <input
-            name="discountPercent"
-            type="number"
-            min="0"
-            max="90"
-            step="1"
-            required
-            defaultValue={settings.discountPercent}
-            className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
-          />
-        </Field>
 
         <div>
           <label className="mb-1.5 block text-xs tracking-wide text-ink-soft">

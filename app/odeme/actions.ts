@@ -136,30 +136,21 @@ export async function validateDiscountCode(code: string): Promise<DiscountValida
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return { valid: false, error: "Bu indirim kodu yalnızca üye girişi yapan müşteriler için geçerlidir." };
-  }
-
-  const { data: promo } = await supabase
-    .from("promo_popup_settings")
-    .select("enabled, discount_code, discount_percent")
-    .eq("id", 1)
+  const { data, error } = await supabase
+    .rpc("validate_discount_code", { p_code: trimmed, p_customer_id: user?.id ?? null })
     .maybeSingle();
 
-  if (!promo || !promo.enabled || promo.discount_code.toLowerCase() !== trimmed.toLowerCase()) {
+  const result = data as { ok: boolean; discount_percent: number | null; message: string | null } | null;
+
+  if (error || !result) {
     return { valid: false, error: "Geçersiz indirim kodu." };
   }
 
-  const { count } = await supabase
-    .from("orders")
-    .select("id", { count: "exact", head: true })
-    .eq("customer_id", user.id);
-
-  if ((count ?? 0) > 0) {
-    return { valid: false, error: "Bu indirim kodu yalnızca ilk siparişinizde geçerlidir." };
+  if (!result.ok) {
+    return { valid: false, error: result.message ?? "Geçersiz indirim kodu." };
   }
 
-  return { valid: true, discountPercent: Number(promo.discount_percent) };
+  return { valid: true, discountPercent: Number(result.discount_percent) };
 }
 
 export interface PaytrTokenState {
