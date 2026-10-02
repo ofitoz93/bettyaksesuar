@@ -5,6 +5,7 @@ import {
   bulkCreateWholesaleProducts,
   type BulkWholesaleActionState,
 } from "@/app/admin/actions";
+import { createClient } from "@/lib/supabase/client";
 import BarcodeScanButton from "./BarcodeScanButton";
 
 const initialState: BulkWholesaleActionState = {};
@@ -18,13 +19,56 @@ function makeId(prefix: string) {
 export default function BulkProductForm() {
   const [state, formAction, pending] = useActionState(bulkCreateWholesaleProducts, initialState);
   const [rowIds, setRowIds] = useState<string[]>(() => [makeId("r")]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const addRow = () => setRowIds((ids) => [...ids, makeId("r")]);
   const removeRow = (id: string) =>
     setRowIds((ids) => (ids.length > 1 ? ids.filter((rowId) => rowId !== id) : ids));
 
+  // Fotoğraflar Vercel'in sunucusuz fonksiyon isteklerinde ~4.5MB sabit boyut
+  // sınırı var; birkaç telefon fotoğrafı bunu kolayca aşıp sunucu action'ını
+  // hiç çalıştırmadan hataya yol açıyordu. Bu yüzden dosyaları önce tarayıcıdan
+  // doğrudan Supabase Storage'a yüklüyoruz, action'a sadece path'leri gönderiyoruz.
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setUploadError(null);
+
+    const rawFormData = new FormData(e.currentTarget);
+    const payload = new FormData();
+    const supabase = createClient();
+
+    setUploading(true);
+    for (const id of rowIds) {
+      payload.append("rowIds", id);
+      payload.set(`name-${id}`, String(rawFormData.get(`name-${id}`) ?? ""));
+      payload.set(`sku-${id}`, String(rawFormData.get(`sku-${id}`) ?? ""));
+
+      const files = rawFormData
+        .getAll(`images-${id}`)
+        .filter((f): f is File => f instanceof File && f.size > 0);
+
+      for (const file of files) {
+        const extension = file.name.split(".").pop() || "jpg";
+        const path = `${id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+        const { error } = await supabase.storage.from("wholesale-images").upload(path, file);
+
+        if (error) {
+          setUploading(false);
+          setUploadError(`Fotoğraf yüklenemedi: ${error.message}`);
+          return;
+        }
+
+        payload.append(`imagePaths-${id}`, path);
+      }
+    }
+    setUploading(false);
+
+    formAction(payload);
+  }
+
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {rowIds.map((id, index) => (
         <ProductRow
           key={id}
@@ -42,6 +86,8 @@ export default function BulkProductForm() {
         + Ürün Satırı Ekle
       </button>
 
+      {uploadError && <p className="text-xs text-status-red-fg">{uploadError}</p>}
+
       {state.results && state.results.length > 0 && (
         <div className="border border-line bg-ivory-deep p-4 text-xs">
           <div className="mb-2 font-medium tracking-wide text-ink uppercase">Sonuç</div>
@@ -58,10 +104,10 @@ export default function BulkProductForm() {
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || uploading}
         className="mt-1 w-fit bg-ink px-8 py-3.5 text-xs font-medium tracking-[0.14em] text-ivory uppercase transition-colors hover:bg-gold-deep disabled:opacity-50"
       >
-        {pending ? "Kaydediliyor..." : "Havuza Kaydet"}
+        {uploading ? "Fotoğraflar yükleniyor..." : pending ? "Kaydediliyor..." : "Havuza Kaydet"}
       </button>
     </form>
   );

@@ -245,26 +245,6 @@ export async function createProduct(
   redirect("/admin/urunler");
 }
 
-async function uploadWholesaleImageFiles(files: File[], prefix: string): Promise<string[]> {
-  const supabase = await createClient();
-  const paths: string[] = [];
-
-  for (const file of files) {
-    const extension = file.name.split(".").pop() ?? "jpg";
-    const path = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
-
-    const { error } = await supabase.storage.from("wholesale-images").upload(path, file);
-    if (error) {
-      console.error("uploadWholesaleImageFiles error:", error.message);
-      continue;
-    }
-
-    paths.push(path);
-  }
-
-  return paths;
-}
-
 export interface BulkWholesaleResult {
   name: string;
   error?: string;
@@ -274,6 +254,11 @@ export interface BulkWholesaleActionState {
   results?: BulkWholesaleResult[];
 }
 
+// Fotoğraflar artık bu action'a ulaşmadan önce tarayıcıdan doğrudan Supabase
+// Storage'a yükleniyor (bkz. BulkProductForm) — ham dosyalar yerine sadece
+// storage path'leri alıyoruz. Aksi halde Vercel'in sunucusuz fonksiyonlardaki
+// ~4.5MB sabit istek boyutu sınırı, birkaç telefon fotoğrafıyla hemen aşılıp
+// "bulunamadı" tarzı bir hataya yol açıyordu.
 export async function bulkCreateWholesaleProducts(
   _prevState: BulkWholesaleActionState,
   formData: FormData,
@@ -285,11 +270,9 @@ export async function bulkCreateWholesaleProducts(
   for (const id of rowIds) {
     const name = String(formData.get(`name-${id}`) ?? "").trim();
     const sku = String(formData.get(`sku-${id}`) ?? "").trim() || null;
-    const files = formData
-      .getAll(`images-${id}`)
-      .filter((f): f is File => f instanceof File && f.size > 0);
+    const paths = formData.getAll(`imagePaths-${id}`).map(String).filter(Boolean);
 
-    if (!name && !sku && files.length === 0) {
+    if (!name && !sku && paths.length === 0) {
       // Boş bırakılmış satır — sessizce atla.
       continue;
     }
@@ -310,7 +293,6 @@ export async function bulkCreateWholesaleProducts(
       continue;
     }
 
-    const paths = await uploadWholesaleImageFiles(files, product.id);
     if (paths.length > 0) {
       await supabase.from("wholesale_product_images").insert(
         paths.map((path, index) => ({
