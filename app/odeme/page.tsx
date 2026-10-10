@@ -5,16 +5,18 @@ import { getShippingSettings } from "@/lib/data/shipping";
 import { getCurrentProfile } from "@/lib/data/profile";
 import { getEnabledPaymentMethods } from "@/lib/data/paymentMethods";
 import { isPaytrConfigured } from "@/lib/paytr";
+import { getMyAddresses } from "@/lib/data/addresses";
 
 export const metadata = {
   title: "Ödeme | Betty Aksesuar",
 };
 
 export default async function OdemePage() {
-  const [shippingSettings, profile, allEnabledMethods] = await Promise.all([
+  const [shippingSettings, profile, allEnabledMethods, savedAddresses] = await Promise.all([
     getShippingSettings(),
     getCurrentProfile(),
     getEnabledPaymentMethods(),
+    getMyAddresses(),
   ]);
 
   const paytrConfigured = isPaytrConfigured();
@@ -37,6 +39,7 @@ export default async function OdemePage() {
             shippingSettings={shippingSettings}
             profile={profile}
             paymentMethods={paymentMethods}
+            savedAddresses={savedAddresses}
           />
         </div>
       </main>

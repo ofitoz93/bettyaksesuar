@@ -311,6 +311,143 @@ export async function bulkCreateWholesaleProducts(
   return { results };
 }
 
+export interface BulkProductResult {
+  rowId: string;
+  name: string;
+  error?: string;
+}
+
+export interface BulkProductActionState {
+  results?: BulkProductResult[];
+}
+
+// SEO alanları ürün adı + açıklamadan otomatik üretilir
+function buildProductSeo(name: string, descriptionHtml: string, categoryName: string) {
+  const plainDescription = descriptionHtml
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&[a-z]+;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const truncate = (text: string, max: number) => {
+    if (text.length <= max) return text;
+    const cut = text.slice(0, max - 1);
+    const lastSpace = cut.lastIndexOf(" ");
+    return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:-]+$/, "")}…`;
+  };
+
+  const metaDescription = truncate(
+    plainDescription || `${name}${categoryName ? ` — ${categoryName}` : ""}. Betty Aksesuar'da.`,
+    155,
+  );
+
+  const keywords = new Set<string>();
+  keywords.add(name.toLocaleLowerCase("tr-TR"));
+  if (categoryName) keywords.add(categoryName.toLocaleLowerCase("tr-TR"));
+  for (const word of name.toLocaleLowerCase("tr-TR").split(/[^\p{L}\p{N}]+/u)) {
+    if (word.length >= 3) keywords.add(word);
+  }
+
+  return {
+    metaTitle: truncate(name, 60),
+    metaDescription,
+    metaKeywords: [...keywords].slice(0, 10).join(", "),
+  };
+}
+
+// Toplu ürün ekleme — ürünler doğrudan mağazada yayına alınır. Fotoğraflar
+// tarayıcıdan doğrudan Storage'a yüklenir (bkz. BulkPublishForm); buraya sadece
+// path'ler gelir (Vercel'in ~4.5MB istek sınırına takılmamak için).
+export async function bulkCreateProducts(
+  _prevState: BulkProductActionState,
+  formData: FormData,
+): Promise<BulkProductActionState> {
+  const rowIds = formData.getAll("rowIds").map(String);
+  const supabase = await createClient();
+  const results: BulkProductResult[] = [];
+
+  const { data: categoryRows } = await supabase.from("categories").select("slug, name");
+  const categoryNames = new Map((categoryRows ?? []).map((c) => [c.slug as string, c.name as string]));
+
+  for (const id of rowIds) {
+    const name = String(formData.get(`name-${id}`) ?? "").trim();
+    const description = String(formData.get(`description-${id}`) ?? "").trim();
+    const category = String(formData.get(`category-${id}`) ?? "");
+    const price = Number(formData.get(`price-${id}`));
+    const stockRaw = Number(formData.get(`stock-${id}`) ?? 0);
+    const paths = formData.getAll(`imagePaths-${id}`).map(String).filter(Boolean);
+
+    const removeUploaded = async () => {
+      if (paths.length > 0) await supabase.storage.from("product-images").remove(paths);
+    };
+
+    if (!name || !category || !Number.isFinite(price) || price < 0) {
+      results.push({ rowId: id, name: name || "(isimsiz ürün)", error: "Ad, kategori ve fiyat zorunlu" });
+      await removeUploaded();
+      continue;
+    }
+
+    const seo = buildProductSeo(name, description, categoryNames.get(category) ?? "");
+    const baseSlug = slugify(name);
+    const row = {
+      name,
+      category,
+      price,
+      stock: Number.isFinite(stockRaw) && stockRaw > 0 ? Math.floor(stockRaw) : 0,
+      description: description && description !== "<br>" ? description : null,
+      is_active: true,
+      meta_title: seo.metaTitle,
+      meta_description: seo.metaDescription,
+      meta_keywords: seo.metaKeywords,
+      tax_class_percent: 20,
+    };
+
+    // Aynı isimde ürün varsa slug çakışır — sonuna kısa bir ek koyarak tekrar dene
+    let { data: product, error } = await supabase
+      .from("products")
+      .insert({ ...row, slug: baseSlug })
+      .select("id")
+      .single();
+    if (error?.code === "23505") {
+      ({ data: product, error } = await supabase
+        .from("products")
+        .insert({ ...row, slug: `${baseSlug}-${Math.random().toString(36).slice(2, 6)}` })
+        .select("id")
+        .single());
+    }
+
+    if (error || !product) {
+      results.push({ rowId: id, name, error: error?.message ?? "kaydedilemedi" });
+      await removeUploaded();
+      continue;
+    }
+
+    if (paths.length > 0) {
+      const { error: imageError } = await supabase.from("product_images").insert(
+        paths.map((path, index) => ({
+          product_id: product.id,
+          url: supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl,
+          position: index,
+        })),
+      );
+      if (imageError) {
+        results.push({ rowId: id, name, error: `Ürün eklendi ama fotoğraflar bağlanamadı: ${imageError.message}` });
+        continue;
+      }
+    }
+
+    results.push({ rowId: id, name });
+  }
+
+  revalidatePath("/admin/urunler");
+  revalidatePath("/magaza");
+  revalidatePath("/");
+
+  return { results };
+}
+
 export async function deleteWholesaleProduct(id: string) {
   const supabase = await createClient();
 
@@ -967,8 +1104,8 @@ export async function updateOrderStatus(orderId: string, status: string) {
   const supabase = await createClient();
   await supabase.from("orders").update({ status }).eq("id", orderId);
 
-  revalidatePath("/admin/siparisler");
-  revalidatePath("/hesabim/siparislerim");
+  revalidatePath("/admin/siparisler", "layout");
+  revalidatePath("/hesabim", "layout");
 }
 
 export async function updateOrderFulfillment(
@@ -1019,8 +1156,8 @@ ${trackingLine}
     }
   }
 
-  revalidatePath("/admin/siparisler");
-  revalidatePath("/hesabim/siparislerim");
+  revalidatePath("/admin/siparisler", "layout");
+  revalidatePath("/hesabim", "layout");
   return {};
 }
 
@@ -1054,7 +1191,7 @@ export async function createReturnRequest(
     return { error: `İade talebi oluşturulamadı: ${error.message}` };
   }
 
-  revalidatePath("/hesabim/siparislerim");
+  revalidatePath("/hesabim", "layout");
   revalidatePath("/admin/iadeler");
   return {};
 }
@@ -1075,7 +1212,7 @@ export async function updateReturnRequestStatus(
     .eq("id", requestId);
 
   revalidatePath("/admin/iadeler");
-  revalidatePath("/hesabim/siparislerim");
+  revalidatePath("/hesabim", "layout");
 }
 
 export async function closeStockNotification(id: string) {
@@ -1796,5 +1933,36 @@ export async function updateServerSettings(
 
   revalidatePath("/", "layout");
   revalidatePath("/admin/sistem/sunucu");
+  return {};
+}
+
+export async function addOrderNote(
+  orderId: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const note = String(formData.get("note") ?? "").trim();
+
+  if (!note) {
+    return { error: "Not boş olamaz." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error } = await supabase.from("order_events").insert({
+    order_id: orderId,
+    kind: "note",
+    message: note,
+    author_id: user?.id ?? null,
+  });
+
+  if (error) {
+    return { error: `Not eklenemedi: ${error.message}` };
+  }
+
+  revalidatePath(`/admin/siparisler/${orderId}`);
   return {};
 }

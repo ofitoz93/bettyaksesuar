@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { setMainProductImage, type ActionState } from "@/app/admin/actions";
 import type { Product } from "@/lib/types";
@@ -55,10 +55,35 @@ export default function ProductForm({
     );
   };
 
+  // Zorunlu alan gizli bir sekmedeyse tarayıcı formu sessizce göndermiyor (uyarıyı
+  // gösterecek görünür alan yok). İlk hatalı alanın sekmesini açıp uyarıyı orada göster.
+  // ("invalid" olayı kabarcıklanmaz; form üzerinde capture ile dinlenir.)
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    let handled = false;
+    const onInvalid = (e: Event) => {
+      if (handled) return;
+      handled = true;
+      setTimeout(() => (handled = false), 0);
+      const field = e.target as HTMLInputElement;
+      const panel = field.closest<HTMLElement>("[data-tab]");
+      if (!panel || !panel.classList.contains("hidden")) return;
+      setTab(panel.dataset.tab as (typeof TABS)[number]);
+      setTimeout(() => {
+        field.focus();
+        field.reportValidity();
+      }, 0);
+    };
+    form.addEventListener("invalid", onInvalid, true);
+    return () => form.removeEventListener("invalid", onInvalid, true);
+  }, []);
+
   const sortedExistingImages = existingImages.slice().sort((a, b) => a.position - b.position);
 
   return (
-    <form action={formAction} className="max-w-2xl">
+    <form ref={formRef} action={formAction} className="max-w-2xl">
       <div className="mb-6 flex gap-6 border-b border-line">
         {TABS.map((t) => (
           <button
@@ -75,7 +100,7 @@ export default function ProductForm({
       </div>
 
       {/* GENEL */}
-      <div className={tab === "genel" ? "flex flex-col gap-5" : "hidden"}>
+      <div data-tab="genel" className={tab === "genel" ? "flex flex-col gap-5" : "hidden"}>
         <Field label="Ürün Adı">
           <input
             ref={nameRef}
@@ -133,7 +158,7 @@ export default function ProductForm({
       </div>
 
       {/* VERİ */}
-      <div className={tab === "veri" ? "flex flex-col gap-5" : "hidden"}>
+      <div data-tab="veri" className={tab === "veri" ? "flex flex-col gap-5" : "hidden"}>
         <Field label="Ürün Kodu / Barkod (varsa barkod, yoksa ürün kodu)">
           <input
             name="sku"
@@ -229,7 +254,7 @@ export default function ProductForm({
       </div>
 
       {/* BAĞLANTI */}
-      <div className={tab === "baglanti" ? "flex flex-col gap-5" : "hidden"}>
+      <div data-tab="baglanti" className={tab === "baglanti" ? "flex flex-col gap-5" : "hidden"}>
         <Field label="Kategori">
           <select
             name="category"
@@ -253,7 +278,7 @@ export default function ProductForm({
       </div>
 
       {/* RESİM */}
-      <div className={tab === "resim" ? "flex flex-col gap-5" : "hidden"}>
+      <div data-tab="resim" className={tab === "resim" ? "flex flex-col gap-5" : "hidden"}>
         {sortedExistingImages.length > 0 ? (
           <Field label="Mevcut Fotoğraflar (ilki ana görseldir)">
             <div className="flex flex-wrap gap-3">

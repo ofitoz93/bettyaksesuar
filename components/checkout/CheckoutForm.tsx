@@ -8,7 +8,8 @@ import { createOrder, validateDiscountCode, type CheckoutState } from "@/app/ode
 import { calculateShippingFee, type ShippingSettings } from "@/lib/shipping";
 import type { CurrentProfile } from "@/lib/data/profile";
 import type { PaymentMethod } from "@/lib/data/paymentMethods";
-import { TURKEY_PROVINCES } from "@/lib/turkeyProvinces";
+import type { CustomerAddress } from "@/lib/data/addresses";
+import TurkeyAddressFields from "@/components/address/TurkeyAddressFields";
 import PaytrPaymentFrame from "./PaytrPaymentFrame";
 
 const initialState: CheckoutState = {};
@@ -17,9 +18,15 @@ interface CheckoutFormProps {
   shippingSettings: ShippingSettings;
   profile: CurrentProfile | null;
   paymentMethods: PaymentMethod[];
+  savedAddresses?: CustomerAddress[];
 }
 
-export default function CheckoutForm({ shippingSettings, profile, paymentMethods }: CheckoutFormProps) {
+export default function CheckoutForm({
+  shippingSettings,
+  profile,
+  paymentMethods,
+  savedAddresses = [],
+}: CheckoutFormProps) {
   const { items, totalPrice, clear, removeItem, updateQuantity } = useCart();
   const [state, formAction, pending] = useActionState(createOrder, initialState);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -32,50 +39,11 @@ export default function CheckoutForm({ shippingSettings, profile, paymentMethods
     ? Math.round(((totalPrice * activeMethod.extraDiscountPercent) / 100) * 100) / 100
     : 0;
 
-  const [city, setCity] = useState("");
-  const [district, setDistrict] = useState("");
-  const [neighbourhood, setNeighbourhood] = useState("");
-  const [districts, setDistricts] = useState<string[]>([]);
-  const [neighbourhoods, setNeighbourhoods] = useState<string[]>([]);
-  const [loadingDistricts, setLoadingDistricts] = useState(false);
-  const [loadingNeighbourhoods, setLoadingNeighbourhoods] = useState(false);
   const [sameBillingAddress, setSameBillingAddress] = useState(true);
-
-  const handleCityChange = async (value: string) => {
-    setCity(value);
-    setDistrict("");
-    setNeighbourhood("");
-    setDistricts([]);
-    setNeighbourhoods([]);
-    if (!value) return;
-
-    setLoadingDistricts(true);
-    try {
-      const res = await fetch(`/api/turkey/ilceler?il=${encodeURIComponent(value)}`);
-      const data = await res.json();
-      setDistricts(data.districts ?? []);
-    } finally {
-      setLoadingDistricts(false);
-    }
-  };
-
-  const handleDistrictChange = async (value: string) => {
-    setDistrict(value);
-    setNeighbourhood("");
-    setNeighbourhoods([]);
-    if (!value) return;
-
-    setLoadingNeighbourhoods(true);
-    try {
-      const res = await fetch(
-        `/api/turkey/mahalleler?il=${encodeURIComponent(city)}&ilce=${encodeURIComponent(value)}`,
-      );
-      const data = await res.json();
-      setNeighbourhoods(data.neighbourhoods ?? []);
-    } finally {
-      setLoadingNeighbourhoods(false);
-    }
-  };
+  const defaultAddress = savedAddresses.find((a) => a.isDefault) ?? savedAddresses[0] ?? null;
+  // Kayıtlı adres seçildiyse onun id'si, "new" ise boş form
+  const [selectedAddressId, setSelectedAddressId] = useState<string>(defaultAddress?.id ?? "new");
+  const selectedAddress = savedAddresses.find((a) => a.id === selectedAddressId) ?? null;
 
   const [discountInput, setDiscountInput] = useState("");
   const [applyingDiscount, setApplyingDiscount] = useState(false);
@@ -251,117 +219,97 @@ export default function CheckoutForm({ shippingSettings, profile, paymentMethods
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-5">
-          <Field label="Ad Soyad">
-            <input
-              name="name"
-              required
-              defaultValue={profile?.fullName ?? ""}
-              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
-            />
-          </Field>
-          <Field label="Telefon">
-            <input
-              name="phone"
-              type="tel"
-              required
-              defaultValue={profile?.phone ?? ""}
-              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
-            />
-          </Field>
-        </div>
+        {savedAddresses.length > 0 && (
+          <div>
+            <label className="mb-2 block text-xs tracking-wide text-ink-soft">Teslimat Adresi</label>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {savedAddresses.map((address) => (
+                <label
+                  key={address.id}
+                  className="flex cursor-pointer gap-2.5 border border-line bg-white px-4 py-3 text-xs has-[:checked]:border-ink"
+                >
+                  <input
+                    type="radio"
+                    name="savedAddress"
+                    checked={selectedAddressId === address.id}
+                    onChange={() => setSelectedAddressId(address.id)}
+                    className="mt-0.5"
+                  />
+                  <span className="min-w-0 text-ink-soft">
+                    <span className="block text-sm text-ink">{address.title}</span>
+                    {address.addressLine}, {address.neighbourhood}, {address.district} / {address.city}
+                  </span>
+                </label>
+              ))}
+              <label className="flex cursor-pointer items-center gap-2.5 border border-dashed border-line bg-white px-4 py-3 text-sm has-[:checked]:border-ink">
+                <input
+                  type="radio"
+                  name="savedAddress"
+                  checked={selectedAddressId === "new"}
+                  onChange={() => setSelectedAddressId("new")}
+                />
+                + Yeni adres gir
+              </label>
+            </div>
+          </div>
+        )}
 
-        <Field label="E-posta">
-          <input
-            name="email"
-            type="email"
-            required
-            defaultValue={profile?.email ?? ""}
-            className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
+        {/* Seçilen adres değişince alanlar o adresin bilgileriyle yeniden doldurulur */}
+        <div key={selectedAddressId} className="flex flex-col gap-5">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label="Ad Soyad">
+              <input
+                name="name"
+                required
+                defaultValue={selectedAddress?.fullName ?? profile?.fullName ?? ""}
+                className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
+              />
+            </Field>
+            <Field label="Telefon">
+              <input
+                name="phone"
+                type="tel"
+                required
+                defaultValue={selectedAddress?.phone ?? profile?.phone ?? ""}
+                className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
+              />
+            </Field>
+          </div>
+
+          <Field label="E-posta">
+            <input
+              name="email"
+              type="email"
+              required
+              defaultValue={profile?.email ?? ""}
+              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
+            />
+          </Field>
+
+          <TurkeyAddressFields
+            initialCity={selectedAddress?.city}
+            initialDistrict={selectedAddress?.district}
+            initialNeighbourhood={selectedAddress?.neighbourhood}
           />
-        </Field>
 
-        <div className="grid grid-cols-2 gap-5">
-          <Field label="İl">
-            <select
-              name="city"
+          <Field label="Adres">
+            <textarea
+              name="address"
               required
-              value={city}
-              onChange={(e) => handleCityChange(e.target.value)}
+              rows={3}
+              defaultValue={selectedAddress?.addressLine ?? ""}
+              placeholder="Cadde/sokak, bina no, daire no, posta kodu"
               className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
-            >
-              <option value="" disabled>
-                İl seçin
-              </option>
-              {TURKEY_PROVINCES.map((province) => (
-                <option key={province} value={province}>
-                  {province}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="İlçe">
-            <select
-              name="district"
-              required
-              value={district}
-              disabled={!city || loadingDistricts}
-              onChange={(e) => handleDistrictChange(e.target.value)}
-              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink disabled:opacity-50"
-            >
-              <option value="" disabled>
-                {loadingDistricts ? "Yükleniyor..." : "İlçe seçin"}
-              </option>
-              {districts.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-
-        <Field label="Mahalle">
-          {neighbourhoods.length > 0 ? (
-            <select
-              name="neighbourhood"
-              required
-              value={neighbourhood}
-              disabled={!district || loadingNeighbourhoods}
-              onChange={(e) => setNeighbourhood(e.target.value)}
-              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink disabled:opacity-50"
-            >
-              <option value="" disabled>
-                {loadingNeighbourhoods ? "Yükleniyor..." : "Mahalle seçin"}
-              </option>
-              {neighbourhoods.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              name="neighbourhood"
-              required
-              disabled={!district}
-              value={neighbourhood}
-              onChange={(e) => setNeighbourhood(e.target.value)}
-              placeholder={district ? "Mahalle adı" : "Önce ilçe seçin"}
-              className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink disabled:opacity-50"
             />
+          </Field>
+
+          {profile && !selectedAddress && (
+            <label className="flex items-center gap-2.5 text-xs text-ink-soft">
+              <input type="checkbox" name="saveAddress" defaultChecked className="h-4 w-4" />
+              Bu adresi sonraki siparişlerim için adreslerime kaydet
+            </label>
           )}
-        </Field>
-
-        <Field label="Teslimat Adresi">
-          <textarea
-            name="address"
-            required
-            rows={3}
-            placeholder="Cadde/sokak, bina no, daire no, posta kodu"
-            className="w-full border border-line bg-white px-4 py-2.5 text-sm outline-none focus:border-ink"
-          />
-        </Field>
+        </div>
 
         <label className="flex items-center gap-2.5 text-xs text-ink-soft">
           <input

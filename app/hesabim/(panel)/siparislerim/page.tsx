@@ -1,103 +1,71 @@
 import Link from "next/link";
 import { getMyOrders } from "@/lib/data/orders";
-import { getMyReturnRequests } from "@/lib/data/returns";
-import { statusLabel, paymentLabel } from "@/lib/orders";
-import { getTrackingUrl } from "@/lib/shippingCarriers";
-import ReturnRequestButton from "./ReturnRequestButton";
-import CancelOrderButton from "./CancelOrderButton";
+import { formatPrice, paymentLabel } from "@/lib/orders";
+import OrderStatusBadge from "@/components/account/OrderStatusBadge";
 
-const STATUS_TONE: Record<string, string> = {
-  beklemede: "bg-status-amber-bg text-status-amber-fg",
-  onaylandi: "bg-status-blue-bg text-status-blue-fg",
-  kargoda: "bg-status-blue-bg text-status-blue-fg",
-  teslim_edildi: "bg-status-green-bg text-status-green-fg",
-  iptal: "bg-status-red-bg text-status-red-fg",
-};
+export const metadata = { title: "Siparişlerim | Betty Aksesuar" };
 
 export default async function SiparislerimPage() {
-  const [orders, returnRequests] = await Promise.all([getMyOrders(), getMyReturnRequests()]);
-  const returnStatusByOrderId = new Map(returnRequests.map((r) => [r.orderId, r.status]));
+  const orders = await getMyOrders();
 
   return (
     <div>
-      <div className="mb-10 text-center">
-        <div className="text-[11px] font-medium tracking-[0.22em] text-gold-deep uppercase">
-          HESABIM
-        </div>
-        <h1 className="font-display mt-2.5 text-[28px]">Siparişlerim</h1>
+      <div className="mb-6 border-b border-line pb-4">
+        <h1 className="font-display text-[28px]">Siparişlerim</h1>
+        <p className="mt-1 text-xs text-ink-soft">
+          Siparişlerinizin durumunu takip edin, detaylarını görüntüleyin, iptal veya iade talebi
+          oluşturun.
+        </p>
       </div>
 
-      <Link href="/hesabim" className="mb-6 inline-block text-xs text-ink-soft hover:text-ink">
-        ← Hesabım
-      </Link>
-
       {orders.length === 0 ? (
-        <p className="text-center text-sm text-ink-soft">Henüz siparişiniz yok.</p>
+        <div className="border border-dashed border-line px-6 py-10 text-center">
+          <p className="mb-5 text-sm text-ink-soft">Henüz siparişiniz yok.</p>
+          <Link
+            href="/magaza"
+            className="inline-block bg-ink px-8 py-3 text-xs font-medium tracking-[0.14em] text-ivory uppercase hover:bg-gold-deep"
+          >
+            Alışverişe Başla
+          </Link>
+        </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <ul className="flex flex-col gap-3">
           {orders.map((order) => {
-            const trackingUrl = getTrackingUrl(order.shippingCarrier, order.trackingNumber);
+            const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+            const preview = order.items.map((item) => item.product_name).join(", ");
 
             return (
-              <div key={order.id} className="border border-line p-5">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div className="text-sm">{order.orderNumber}</div>
-                    <div className="text-xs text-ink-faint">
-                      {new Date(order.createdAt).toLocaleDateString("tr-TR")} ·{" "}
-                      {paymentLabel(order.paymentMethod)}
+              <li key={order.id}>
+                <Link
+                  href={`/hesabim/siparislerim/${order.id}`}
+                  className="block border border-line bg-white p-5 hover:border-ink"
+                >
+                  <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <div className="text-sm break-all">{order.orderNumber}</div>
+                      <div className="text-xs text-ink-faint">
+                        {new Date(order.createdAt).toLocaleDateString("tr-TR", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}{" "}
+                        · {paymentLabel(order.paymentMethod)}
+                      </div>
                     </div>
+                    <OrderStatusBadge status={order.status} />
                   </div>
-                  <span
-                    className={`px-2.5 py-1 text-[10px] tracking-wide uppercase ${STATUS_TONE[order.status] ?? ""}`}
-                  >
-                    {statusLabel(order.status)}
-                  </span>
-                </div>
-
-                {order.trackingNumber && (
-                  <div className="mb-3 text-xs text-ink-soft">
-                    Kargo: {order.shippingCarrier} — {order.trackingNumber}
-                    {trackingUrl && (
-                      <a
-                        href={trackingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ml-2 text-gold-deep underline"
-                      >
-                        Kargoyu Takip Et
-                      </a>
-                    )}
+                  <div className="truncate text-xs text-ink-soft">{preview}</div>
+                  <div className="mt-3 flex items-center justify-between border-t border-line pt-3 text-sm">
+                    <span className="text-ink-soft">
+                      {itemCount} ürün · <span className="text-ink">{formatPrice(order.total)}</span>
+                    </span>
+                    <span className="text-xs text-ink-soft">Detaylar →</span>
                   </div>
-                )}
-
-                <div className="flex flex-col gap-1 border-t border-line pt-3">
-                  {order.items.map((item) => (
-                    <div key={item.product_slug + item.quantity} className="flex justify-between text-xs text-ink-soft">
-                      <span>
-                        {item.product_name} × {item.quantity}
-                      </span>
-                      <span>₺{item.line_total}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-3 flex justify-between border-t border-line pt-3 text-sm">
-                  <span>Toplam</span>
-                  <span>₺{order.total}</span>
-                </div>
-
-                {order.status === "teslim_edildi" && (
-                  <ReturnRequestButton
-                    orderId={order.id}
-                    existingStatus={returnStatusByOrderId.get(order.id) ?? null}
-                  />
-                )}
-                {order.status === "beklemede" && <CancelOrderButton orderId={order.id} />}
-              </div>
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

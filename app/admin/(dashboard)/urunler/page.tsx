@@ -18,7 +18,7 @@ export default async function AdminDashboardPage() {
         <h1 className="font-display text-[28px]">Ürünler</h1>
         <div className="flex gap-3">
           <Link
-            href="/admin/urun/toplu-ekle"
+            href="/admin/urun/toplu-yayinla"
             className="border border-ink px-6 py-3 text-xs font-medium tracking-[0.14em] text-ink uppercase hover:bg-ivory-deep"
           >
             Toplu Ürün Ekle

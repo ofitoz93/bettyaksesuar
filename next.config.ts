@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "50mb",
     },
+    // middleware.ts varken istek gövdesi varsayılan olarak 10MB'ta kesiliyor;
+    // fotoğraflı ürün formları için server action limitiyle aynı tutulur.
+    proxyClientMaxBodySize: "50mb",
   },
   images: {
     qualities: [75, 90, 100],

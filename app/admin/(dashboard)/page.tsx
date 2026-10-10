@@ -6,12 +6,12 @@ export default async function AdminDashboardPage() {
   const [stats, cityOrders] = await Promise.all([getDashboardStats(), getOrdersByCity()]);
 
   const cards = [
-    { label: "Toplam Sipariş", value: stats.totalOrders, href: "/admin/siparisler" },
-    { label: "Bekleyen Sipariş", value: stats.pendingOrders, href: "/admin/siparisler" },
+    { label: "Toplam Sipariş", value: stats.totalOrders, href: "/admin/siparisler?durum=tumu" },
+    { label: "Bekleyen Sipariş", value: stats.pendingOrders, href: "/admin/siparisler?durum=beklemede" },
     {
       label: "Bu Ay Ciro",
       value: `₺${stats.monthRevenue.toLocaleString("tr-TR")}`,
-      href: "/admin/siparisler",
+      href: "/admin/siparisler?durum=tumu",
     },
     { label: "Toplam Ürün", value: stats.totalProducts, href: "/admin/urunler" },
     { label: "Düşük Stok (≤5)", value: stats.lowStockProducts, href: "/admin/urunler" },

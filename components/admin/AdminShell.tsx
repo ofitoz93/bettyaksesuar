@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import AdminSidebar from "./AdminSidebar";
 import AdminUserMenu from "./AdminUserMenu";
+import CommandPalette from "./CommandPalette";
 
 export default function AdminShell({
   pendingStock,
@@ -46,6 +47,16 @@ export default function AdminShell({
             </Link>
           </div>
           <div className="flex items-center gap-4 sm:gap-6">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("admin-search-open"))}
+              className="flex items-center gap-2 border border-line px-3 py-1.5 text-xs text-ink-soft hover:border-ink hover:text-ink"
+              aria-label="Hızlı arama"
+            >
+              <span>⌕</span>
+              <span className="hidden md:inline">Ara</span>
+              <kbd className="hidden border border-line px-1 text-[10px] text-ink-faint md:inline">Ctrl K</kbd>
+            </button>
             <Link
               href="/"
               target="_blank"
@@ -60,6 +71,7 @@ export default function AdminShell({
           {children}
         </main>
       </div>
+      <CommandPalette />
     </div>
   );
 }

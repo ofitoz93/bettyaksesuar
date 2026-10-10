@@ -2,18 +2,11 @@
 
 import { useActionState } from "react";
 import { updateOrderFulfillment, type ActionState } from "@/app/admin/actions";
-import { ORDER_STATUSES, statusLabel } from "@/lib/orders";
+import { ORDER_STATUSES, ORDER_STATUS_TONE, statusLabel } from "@/lib/orders";
 import { SHIPPING_CARRIERS } from "@/lib/shippingCarriers";
 
 const initialState: ActionState = {};
 
-const STATUS_TONE: Record<string, string> = {
-  beklemede: "bg-status-amber-bg text-status-amber-fg",
-  onaylandi: "bg-status-blue-bg text-status-blue-fg",
-  kargoda: "bg-status-blue-bg text-status-blue-fg",
-  teslim_edildi: "bg-status-green-bg text-status-green-fg",
-  iptal: "bg-status-red-bg text-status-red-fg",
-};
 
 export default function OrderFulfillmentForm({
   orderId,
@@ -39,7 +32,7 @@ export default function OrderFulfillmentForm({
           name="status"
           defaultValue={status}
           className={`border-0 px-3 py-1.5 text-[11px] font-medium tracking-wide uppercase outline-none ${
-            STATUS_TONE[status] ?? ""
+            ORDER_STATUS_TONE[status] ?? ""
           }`}
         >
           {ORDER_STATUSES.map((s) => (

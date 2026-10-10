@@ -44,6 +44,7 @@ export async function createOrder(
   const discountCode = String(formData.get("discountCode") ?? "").trim();
   const itemsRaw = String(formData.get("items") ?? "[]");
   const termsAccepted = formData.get("termsAccepted") === "on";
+  const saveAddress = formData.get("saveAddress") === "on";
 
   if (!name || !email || !phone || !city || !district || !neighbourhood || !address) {
     return { error: "Lütfen ad, e-posta, telefon, il, ilçe, mahalle ve adres alanlarını doldurun." };
@@ -106,6 +107,27 @@ export async function createOrder(
   }
 
   const order = Array.isArray(data) ? data[0] : data;
+
+  // Üye müşteri "adresimi kaydet" dediyse adres defterine eklenir (ilk adres varsayılan olur).
+  // Sipariş zaten oluştuğu için buradaki hata siparişi etkilemez.
+  if (saveAddress && user) {
+    const { count } = await supabase
+      .from("customer_addresses")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", user.id);
+
+    await supabase.from("customer_addresses").insert({
+      customer_id: user.id,
+      title: (count ?? 0) === 0 ? "Ev" : `Adres ${(count ?? 0) + 1}`,
+      full_name: name,
+      phone,
+      city,
+      district,
+      neighbourhood,
+      address_line: address,
+      is_default: (count ?? 0) === 0,
+    });
+  }
 
   return {
     order: {
