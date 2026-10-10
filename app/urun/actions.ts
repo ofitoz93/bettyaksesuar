@@ -23,19 +23,11 @@ export async function requestStockNotification(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { error } = await supabase.from("stock_notifications").upsert(
-    {
-      product_id: productId,
-      email,
-      customer_id: user?.id ?? null,
-      notified_at: null,
-    },
-    { onConflict: "product_id,email" },
-  );
+  // Tabloya doğrudan yazma kapalı; fonksiyon müşteri kimliğini oturumdan alır
+  const { error } = await supabase.rpc("request_stock_notification", {
+    p_product_id: productId,
+    p_email: email,
+  });
 
   if (error) {
     console.error("requestStockNotification error:", error.message);
