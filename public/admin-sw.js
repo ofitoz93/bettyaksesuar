@@ -21,8 +21,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || "",
-      icon: "/admin-icons/icon-192.png",
-      badge: "/admin-icons/badge-96.png",
+      icon: "/admin-icons/icon-192.png?v=2",
+      badge: "/admin-icons/badge-96.png?v=2",
       tag: data.tag,
       renotify: Boolean(data.tag),
       data: { url: data.url || "/admin" },
