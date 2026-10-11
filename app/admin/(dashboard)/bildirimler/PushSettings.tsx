@@ -8,6 +8,7 @@ import {
   updatePushPrefs,
   type PushPrefs,
 } from "@/app/admin/push-actions";
+import { InstallCard } from "@/components/admin/InstallApp";
 
 export interface DeviceRow extends PushPrefs {
   id: string;
@@ -193,6 +194,8 @@ export default function PushSettings({
 
   return (
     <div className="flex flex-col gap-6">
+      <InstallCard />
+
       <section className="border border-line bg-white p-5">
         <h2 className="mb-3 text-xs font-medium tracking-wide text-ink-soft uppercase">Bu cihaz</h2>
 

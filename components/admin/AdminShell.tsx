@@ -5,6 +5,7 @@ import { useState } from "react";
 import AdminSidebar from "./AdminSidebar";
 import AdminUserMenu from "./AdminUserMenu";
 import CommandPalette from "./CommandPalette";
+import { InstallBanner } from "./InstallApp";
 
 export default function AdminShell({
   pendingStock,
@@ -28,6 +29,7 @@ export default function AdminShell({
         onNavigate={() => setMobileNavOpen(false)}
       />
       <div className="min-w-0 flex-1">
+        <InstallBanner />
         <header className="flex items-center justify-between gap-3 border-b border-line bg-white px-4 py-4 sm:px-8">
           <div className="flex items-center gap-3">
             <button
