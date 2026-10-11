@@ -14,7 +14,7 @@ export default async function AdminDashboardPage() {
       href: "/admin/siparisler?durum=tumu",
     },
     { label: "Toplam Ürün", value: stats.totalProducts, href: "/admin/urunler" },
-    { label: "Düşük Stok (≤5)", value: stats.lowStockProducts, href: "/admin/urunler" },
+    { label: "Düşük Stok (≤5)", value: stats.lowStockProducts, href: "/admin/stok-azalan" },
     { label: "Bekleyen İade", value: stats.pendingReturns, href: "/admin/iadeler" },
     {
       label: "Bekleyen Stok Talebi",

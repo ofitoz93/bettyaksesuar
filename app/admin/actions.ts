@@ -1231,6 +1231,39 @@ export async function updateReturnRequestStatus(
   revalidatePath("/hesabim", "layout");
 }
 
+// Azalan Stok sayfasından hızlı stok güncelleme
+export async function updateProductStock(id: string, stock: number): Promise<{ error?: string }> {
+  if (!Number.isInteger(stock) || stock < 0 || stock > 100000) {
+    return { error: "Geçerli bir stok adedi girin." };
+  }
+
+  const supabase = await createClient();
+  const { data: product } = await supabase
+    .from("products")
+    .select("name, slug, stock")
+    .eq("id", id)
+    .maybeSingle();
+  if (!product) return { error: "Ürün bulunamadı." };
+
+  const { error } = await supabase.from("products").update({ stock }).eq("id", id);
+  if (error) return { error: `Stok güncellenemedi: ${error.message}` };
+
+  if ((product.stock ?? 0) <= 0 && stock > 0) {
+    try {
+      await notifyBackInStockCustomers(id, product.name, product.slug);
+    } catch (err) {
+      console.error("notifyBackInStockCustomers error:", err);
+    }
+  }
+
+  revalidatePath("/admin/stok-azalan");
+  revalidatePath("/admin/urunler");
+  revalidatePath("/admin");
+  revalidatePath("/magaza");
+  revalidatePath(`/urun/${product.slug}`);
+  return {};
+}
+
 export async function closeStockNotification(id: string) {
   const supabase = await createClient();
   await supabase

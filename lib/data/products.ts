@@ -87,6 +87,27 @@ export async function getProducts(
   return (data as ProductRow[]).map(mapRow);
 }
 
+// "Stok azaldı" eşiği (bildirim, kontrol paneli ve Azalan Stok sayfası aynı değeri kullanır)
+export const LOW_STOCK_THRESHOLD = 5;
+
+// Admin: stoğu eşik ve altındaki ürünler, en az stoklu önce
+export async function getLowStockProducts(threshold = LOW_STOCK_THRESHOLD): Promise<Product[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .lte("stock", threshold)
+    .order("stock", { ascending: true })
+    .order("name", { ascending: true })
+    .order("position", { foreignTable: "product_images", ascending: true });
+
+  if (error) {
+    console.error("getLowStockProducts error:", error.message);
+    return [];
+  }
+  return (data as ProductRow[]).map(mapRow);
+}
+
 export async function getBestSellers(limit = 4): Promise<Product[]> {
   const supabase = createPublicClient();
   const { data, error } = await supabase

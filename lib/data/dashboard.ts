@@ -1,3 +1,4 @@
+import { LOW_STOCK_THRESHOLD } from "@/lib/data/products";
 import { createClient } from "@/lib/supabase/server";
 
 export interface DashboardStats {
@@ -36,7 +37,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .gte("created_at", monthStart.toISOString())
       .neq("status", "iptal"),
     supabase.from("products").select("id", { count: "exact", head: true }),
-    supabase.from("products").select("id", { count: "exact", head: true }).lte("stock", 5),
+    supabase.from("products").select("id", { count: "exact", head: true }).lte("stock", LOW_STOCK_THRESHOLD),
     supabase
       .from("return_requests")
       .select("id", { count: "exact", head: true })

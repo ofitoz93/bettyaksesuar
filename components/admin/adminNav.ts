@@ -17,6 +17,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     links: [
       { label: "Kategoriler", href: "/admin/ayarlar/kategoriler" },
       { label: "Ürünler", href: "/admin/urunler" },
+      { label: "Azalan Stok", href: "/admin/stok-azalan" },
       { label: "Toplu Ürün Ekle", href: "/admin/urun/toplu-yayinla" },
       { label: "Toptancı Havuzu", href: "/admin/toptanci" },
       { label: "Üreticiler", href: "/admin/katalog/ureticiler" },

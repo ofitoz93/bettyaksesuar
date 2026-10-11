@@ -1,6 +1,7 @@
 import webpush from "web-push";
 import { createServiceClient } from "@/lib/supabase/service";
 import { formatPrice, paymentLabel } from "@/lib/orders";
+import { LOW_STOCK_THRESHOLD } from "@/lib/data/products";
 
 // Admin uygulamasına (ana ekrana eklenen panel) push bildirimi gönderir.
 // Yalnızca sunucuda kullanılır; müşteri işlemlerinden de tetiklendiği için
@@ -29,8 +30,6 @@ const EVENT_COLUMN: Record<AdminPushEvent, string> = {
   stock_request: "notify_stock_request",
   low_stock: "notify_low_stock",
 };
-
-const LOW_STOCK_THRESHOLD = 5;
 
 let vapidReady: boolean | null = null;
 function ensureVapid(): boolean {
@@ -152,7 +151,7 @@ export async function notifyNewOrder(orderId: string) {
       await notifyAdmins("low_stock", {
         title: product.stock === 0 ? `⚠️ Stok tükendi: ${product.name}` : `⚠️ Stok azaldı: ${product.name}`,
         body: product.stock === 0 ? "Ürün artık satın alınamıyor." : `Stokta ${product.stock} adet kaldı.`,
-        url: `/admin/urun/${product.id}`,
+        url: "/admin/stok-azalan",
         tag: `stock-${product.id}`,
       });
     }
