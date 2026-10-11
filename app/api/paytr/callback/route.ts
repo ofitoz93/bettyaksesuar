@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { verifyPaytrCallbackHash } from "@/lib/paytr";
+import { notifyNewOrder } from "@/lib/push";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export async function POST(request: Request) {
@@ -26,6 +28,13 @@ export async function POST(request: Request) {
   }
 
   const supabase = createServiceClient();
+  // PayTR aynı bildirimi tekrar gönderebilir — yalnızca ilk başarılı ödemede admin'e bildir
+  const { data: before } = await supabase
+    .from("orders")
+    .select("id, payment_status")
+    .eq("paytr_merchant_oid", merchantOid)
+    .maybeSingle();
+
   const { error } = await supabase.rpc("paytr_mark_payment", {
     p_merchant_oid: merchantOid,
     p_success: status === "success",
@@ -34,6 +43,10 @@ export async function POST(request: Request) {
   if (error) {
     console.error("paytr_mark_payment error:", error.message);
     return new Response("PAYTR notification failed: db error", { status: 500 });
+  }
+
+  if (status === "success" && before?.payment_status === "beklemede") {
+    after(() => notifyNewOrder(before.id));
   }
 
   // PayTR yalnızca gövdesi tam olarak "OK" olan yanıtı kabul eder,

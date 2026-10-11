@@ -1,8 +1,10 @@
 "use server";
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isPaytrConfigured, requestPaytrToken } from "@/lib/paytr";
+import { notifyNewOrder } from "@/lib/push";
 
 export interface CheckoutState {
   error?: string;
@@ -107,6 +109,11 @@ export async function createOrder(
   }
 
   const order = Array.isArray(data) ? data[0] : data;
+
+  // Admin uygulamasına bildirim (kartla ödemede ödeme onaylanınca PayTR callback'inden gider)
+  if (order.payment_method !== "kredi_karti") {
+    after(() => notifyNewOrder(order.id));
+  }
 
   // Üye müşteri "adresimi kaydet" dediyse adres defterine eklenir (ilk adres varsayılan olur).
   // Sipariş zaten oluştuğu için buradaki hata siparişi etkilemez.

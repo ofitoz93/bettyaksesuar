@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { notifyAdmins } from "@/lib/push";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 import { notifyBackInStockCustomers } from "@/lib/data/stockNotifications";
@@ -1190,6 +1192,20 @@ export async function createReturnRequest(
   if (error) {
     return { error: `İade talebi oluşturulamadı: ${error.message}` };
   }
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("order_number, guest_name")
+    .eq("id", orderId)
+    .maybeSingle();
+  after(() =>
+    notifyAdmins("return_request", {
+      title: `↩️ Yeni iade talebi${order ? ` · ${order.order_number}` : ""}`,
+      body: `${order?.guest_name ? `${order.guest_name}: ` : ""}${reason.length > 120 ? `${reason.slice(0, 117)}...` : reason}`,
+      url: "/admin/iadeler",
+      tag: `return-${orderId}`,
+    }),
+  );
 
   revalidatePath("/hesabim", "layout");
   revalidatePath("/admin/iadeler");

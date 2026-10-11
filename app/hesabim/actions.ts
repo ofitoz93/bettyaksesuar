@@ -2,7 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyAdmins } from "@/lib/push";
+import { formatPrice } from "@/lib/orders";
 
 export interface AuthState {
   error?: string;
@@ -89,6 +92,22 @@ export async function cancelMyOrder(orderId: string): Promise<{ error?: string }
 
   if (error) {
     return { error: error.message };
+  }
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, order_number, guest_name, total")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (order) {
+    after(() =>
+      notifyAdmins("order_cancelled", {
+        title: `❌ Sipariş iptal edildi · ${order.order_number}`,
+        body: `${order.guest_name} · ${formatPrice(Number(order.total))} · müşteri iptal etti`,
+        url: `/admin/siparisler/${order.id}`,
+        tag: `order-${order.id}`,
+      }),
+    );
   }
 
   revalidatePath("/hesabim", "layout");

@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { notifyAdmins } from "@/lib/push";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 
@@ -33,6 +35,17 @@ export async function requestStockNotification(
     console.error("requestStockNotification error:", error.message);
     return { error: "Talebiniz kaydedilemedi, lütfen tekrar deneyin." };
   }
+
+  // Ürün adı formdan değil veritabanından alınır
+  const { data: product } = await supabase.from("products").select("name").eq("id", productId).maybeSingle();
+  after(() =>
+    notifyAdmins("stock_request", {
+      title: `🔔 Stok talebi · ${product?.name ?? productName}`,
+      body: `${email} ürün stoğa girince haber almak istiyor.`,
+      url: "/admin/stok-talepleri",
+      tag: `stock-request-${productId}`,
+    }),
+  );
 
   const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
   if (adminEmail) {

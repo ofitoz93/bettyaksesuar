@@ -39,6 +39,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     ],
   },
   { label: "Müşteriler", href: "/admin/musteriler", links: [] },
+  { label: "Bildirimler", href: "/admin/bildirimler", links: [] },
   {
     label: "Pazarlama",
     links: [
