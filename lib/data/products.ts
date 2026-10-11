@@ -14,7 +14,6 @@ interface ProductRow {
   is_best_seller: boolean;
   description: string | null;
   stock: number;
-  cost_price: number | null;
   sku: string | null;
   meta_title: string | null;
   meta_description: string | null;
@@ -22,9 +21,11 @@ interface ProductRow {
   tax_class_percent: number;
   is_active: boolean;
   product_images: { url: string; position: number }[] | null;
+  // Yalnızca admin okuyabilir; ziyaretçide RLS nedeniyle null döner
+  product_costs: { cost_price: number } | null;
 }
 
-const PRODUCT_SELECT = "*, product_images(url, position)";
+const PRODUCT_SELECT = "*, product_images(url, position), product_costs(cost_price)";
 
 function mapRow(row: ProductRow): Product {
   const images = (row.product_images ?? [])
@@ -45,7 +46,7 @@ function mapRow(row: ProductRow): Product {
     description: row.description,
     images,
     stock: row.stock,
-    costPrice: row.cost_price,
+    costPrice: row.product_costs ? Number(row.product_costs.cost_price) : null,
     sku: row.sku,
     metaTitle: row.meta_title,
     metaDescription: row.meta_description,

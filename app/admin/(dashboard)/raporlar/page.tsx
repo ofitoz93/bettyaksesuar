@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getSalesReport } from "@/lib/data/reports";
 import { statusLabel, paymentLabel } from "@/lib/orders";
 
@@ -9,7 +10,15 @@ export default async function RaporlarPage() {
 
   return (
     <div>
-      <h1 className="font-display mb-8 text-[28px]">Raporlar</h1>
+      <h1 className="font-display mb-2 text-[28px]">Satış Raporu</h1>
+      <p className="mb-8 text-sm text-ink-soft">
+        Buradaki ciro iptal edilmeyen tüm siparişleri (bekleyenler dahil) kapsar. Gerçekleşen satış,
+        maliyet, gider ve net kâr için{" "}
+        <Link href="/admin/kar-zarar" className="underline hover:text-ink">
+          Kâr-Zarar
+        </Link>{" "}
+        sayfasına bakın.
+      </p>
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="border border-line bg-white p-5">

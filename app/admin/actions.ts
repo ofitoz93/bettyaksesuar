@@ -48,7 +48,9 @@ function readProductFields(formData: FormData) {
   const compareAtPrice = compareAtPriceRaw ? Number(compareAtPriceRaw) : null;
   const stock = Number(formData.get("stock") ?? 0);
   const costPriceRaw = String(formData.get("costPrice") ?? "").trim();
-  const costPrice = costPriceRaw ? Number(costPriceRaw) : null;
+  const costPriceNumber = Number(costPriceRaw.replace(",", "."));
+  const costPrice =
+    costPriceRaw && Number.isFinite(costPriceNumber) && costPriceNumber >= 0 ? costPriceNumber : null;
   const sku = String(formData.get("sku") ?? "").trim() || null;
   const description = String(formData.get("description") ?? "").trim();
   const isNew = formData.get("isNew") === "on";
@@ -86,6 +88,23 @@ function readProductFields(formData: FormData) {
     metaKeywords: metaKeywords || null,
     taxClassPercent: Number.isFinite(taxClassPercent) ? taxClassPercent : 20,
   };
+}
+
+// Alış fiyatı herkese açık products tablosunda değil, yalnızca admin'in okuyabildiği
+// product_costs tablosunda tutulur (boş bırakılırsa kayıt silinir).
+async function saveProductCost(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  productId: string,
+  costPrice: number | null,
+): Promise<string | null> {
+  if (costPrice === null) {
+    const { error } = await supabase.from("product_costs").delete().eq("product_id", productId);
+    return error?.message ?? null;
+  }
+  const { error } = await supabase
+    .from("product_costs")
+    .upsert({ product_id: productId, cost_price: costPrice, updated_at: new Date().toISOString() });
+  return error?.message ?? null;
 }
 
 async function uploadImages(
@@ -212,7 +231,6 @@ export async function createProduct(
       compare_at_price: fields.compareAtPrice,
       discount_percent: fields.discountPercent,
       stock: fields.stock,
-      cost_price: fields.costPrice,
       sku: fields.sku,
       description: fields.description,
       is_new: fields.isNew,
@@ -228,6 +246,11 @@ export async function createProduct(
 
   if (error || !product) {
     return { error: `Ürün eklenemedi: ${error?.message ?? "bilinmeyen hata"}` };
+  }
+
+  if (fields.costPrice !== null) {
+    const costError = await saveProductCost(supabase, product.id, fields.costPrice);
+    if (costError) console.error("saveProductCost error:", costError);
   }
 
   const imageUrls = await uploadMainAndGalleryImages(formData, fields.slug);
@@ -497,7 +520,6 @@ export async function updateProduct(
       compare_at_price: fields.compareAtPrice,
       discount_percent: fields.discountPercent,
       stock: fields.stock,
-      cost_price: fields.costPrice,
       sku: fields.sku,
       description: fields.description,
       is_new: fields.isNew,
@@ -513,6 +535,9 @@ export async function updateProduct(
   if (error) {
     return { error: `Ürün güncellenemedi: ${error.message}` };
   }
+
+  const costError = await saveProductCost(supabase, id, fields.costPrice);
+  if (costError) return { error: `Alış fiyatı kaydedilemedi: ${costError}` };
 
   if (wasOutOfStock && fields.stock > 0) {
     try {
@@ -555,7 +580,7 @@ export async function duplicateProduct(id: string) {
 
   const { data: original, error: fetchError } = await supabase
     .from("products")
-    .select("*, product_images(url, position)")
+    .select("*, product_images(url, position), product_costs(cost_price)")
     .eq("id", id)
     .maybeSingle();
 
@@ -565,7 +590,7 @@ export async function duplicateProduct(id: string) {
 
   const newSlug = `${original.slug}-kopya-${Date.now().toString(36)}`;
 
-  const { product_images: originalImages, ...rest } = original;
+  const { product_images: originalImages, product_costs: originalCost, ...rest } = original;
   delete rest.id;
   delete rest.created_at;
   delete rest.updated_at;
@@ -591,6 +616,9 @@ export async function duplicateProduct(id: string) {
       images.map((img) => ({ product_id: copy.id, url: img.url, position: img.position })),
     );
   }
+
+  const cost = originalCost as { cost_price: number } | null;
+  if (cost) await saveProductCost(supabase, copy.id, Number(cost.cost_price));
 
   revalidatePath("/admin/urunler");
   redirect(`/admin/urun/${copy.id}`);

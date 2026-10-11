@@ -64,7 +64,15 @@ export const ADMIN_NAV: AdminNavGroup[] = [
       { label: "Ürün Veri Akışı (XML)", href: "/admin/eklentiler/veri-akisi" },
     ],
   },
-  { label: "Raporlar", href: "/admin/raporlar", links: [] },
+  {
+    label: "Raporlar",
+    links: [
+      { label: "Satış Raporu", href: "/admin/raporlar" },
+      { label: "Kâr-Zarar", href: "/admin/kar-zarar" },
+      { label: "Giderler", href: "/admin/giderler" },
+      { label: "Alış Fiyatları", href: "/admin/alis-fiyatlari" },
+    ],
+  },
   {
     label: "Tema Düzeni",
     links: [
